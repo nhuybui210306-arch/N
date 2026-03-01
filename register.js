@@ -332,3 +332,43 @@ document.querySelectorAll('.social-icon').forEach(icon => {
 if (window.history.replaceState) {
     window.history.replaceState(null, null, window.location.href);
 }
+// Thêm vào function saveUser, sau khi lưu user
+function saveUser(userData) {
+    let users = JSON.parse(localStorage.getItem('2n1_users')) || [];
+    
+    const existingUser = users.find(u => u.email === userData.email);
+    if (existingUser) {
+        showError('email');
+        document.getElementById('email-error').textContent = 'Email đã được đăng ký!';
+        return false;
+    }
+    
+    users.push(userData);
+    localStorage.setItem('2n1_users', JSON.stringify(users));
+    
+    // Tạo dữ liệu khởi tạo cho user mới
+    const userInitialData = {
+        name: userData.name,
+        email: userData.email,
+        age: userData.age,
+        loggedIn: true,
+        loginTime: new Date().toISOString()
+    };
+    
+    localStorage.setItem('2n1_current_user', JSON.stringify(userInitialData));
+    
+    // Tạo dữ liệu mặc định
+    localStorage.setItem('2n1_points', '50'); // 50 điểm khởi đầu
+    localStorage.setItem('2n1_tasks', JSON.stringify([]));
+    localStorage.setItem('2n1_pets', JSON.stringify([]));
+    localStorage.setItem('2n1_pet_stats', JSON.stringify({
+        happiness: 50,
+        hunger: 100,
+        exp: 0,
+        level: 1
+    }));
+    localStorage.setItem('2n1_schedule', JSON.stringify({}));
+    localStorage.setItem('2n1_volume', '50');
+    
+    return true;
+}
