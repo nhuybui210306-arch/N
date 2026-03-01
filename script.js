@@ -1,1053 +1,841 @@
-// script.js - File JavaScript chính cho 2N1
-
 // ================ STATE MANAGEMENT ================
 const AppState = {
-    // Tải dữ liệu từ localStorage hoặc dùng mặc định
+    user: JSON.parse(localStorage.getItem('2n1_current_user')) || null,
     tasks: JSON.parse(localStorage.getItem('2n1_tasks')) || [],
-    user: JSON.parse(localStorage.getItem('2n1_user')) || {
-        name: "Người Dùng 2N1",
-        dailyGoal: 8,
-        workStart: "08:00",
-        workEnd: "17:00",
-        theme: "light"
+    points: parseInt(localStorage.getItem('2n1_points')) || 0,
+    pets: JSON.parse(localStorage.getItem('2n1_pets')) || [],
+    currentPet: JSON.parse(localStorage.getItem('2n1_current_pet')) || null,
+    petStats: JSON.parse(localStorage.getItem('2n1_pet_stats')) || {
+        happiness: 50,
+        hunger: 100,
+        exp: 0,
+        level: 1
     },
-    pomodoroSettings: JSON.parse(localStorage.getItem('2n1_pomodoro')) || {
+    schedule: JSON.parse(localStorage.getItem('2n1_schedule')) || {},
+    pomodoro: {
         workDuration: 25,
         breakDuration: 5,
         longBreakDuration: 15,
-        sessionsBeforeLongBreak: 4
+        sessionsBeforeLongBreak: 4,
+        workSessionsCompleted: parseInt(localStorage.getItem('2n1_pomodoro_sessions')) || 0
     },
-    currentDate: new Date(),
-    workSessionsCompleted: parseInt(localStorage.getItem('2n1_pomodoro_sessions')) || 0
+    sound: {
+        current: null,
+        volume: parseInt(localStorage.getItem('2n1_volume')) || 50,
+        playing: false
+    },
+    currentDate: new Date()
 };
 
-// ================ DOM ELEMENTS ================
-const elements = {
-    // Containers
-    timeSlotsContainer: document.getElementById('time-slots-container'),
-    mainContent: document.querySelector('.main-content'),
-    
-    // Buttons
-    addTaskBtn: document.getElementById('add-task-btn'),
-    changeDateBtn: document.getElementById('change-date-btn'),
-    customizePomodoroBtn: document.getElementById('customize-pomodoro-btn'),
-    editStatsBtn: document.getElementById('edit-stats-btn'),
-    settingsLink: document.getElementById('settings-link'),
-    
-    // User info
-    usernameElement: document.getElementById('username'),
-    userInfo: document.getElementById('user-info'),
-    
-    // Stats
-    completedCount: document.getElementById('completed-count'),
-    totalCount: document.getElementById('total-count'),
-    completedTasks: document.getElementById('completed-tasks'),
-    pomodoroCount: document.getElementById('pomodoro-count'),
-    focusTime: document.getElementById('focus-time'),
-    productivity: document.getElementById('productivity'),
-    currentDateElement: document.getElementById('current-date'),
-    
-    // Pomodoro
-    timerDisplay: document.getElementById('timer'),
-    sessionType: document.getElementById('session-type'),
-    startBtn: document.getElementById('start-btn'),
-    pauseBtn: document.getElementById('pause-btn'),
-    resetBtn: document.getElementById('reset-btn'),
-    
-    // Notification
-    notification: document.getElementById('notification'),
-    notificationMessage: document.getElementById('notification-message'),
-    
-    // Modals
-    modals: {}
-};
-
-// ================ TIME SLOTS CONFIG ================
-const TIME_SLOTS = [
-    { 
-        id: 'morning', 
-        name: 'Sáng', 
-        timeRange: '8:00 - 12:00', 
-        color: '#4b6cb7',
-        icon: 'fas fa-sun'
-    },
-    { 
-        id: 'afternoon', 
-        name: 'Chiều', 
-        timeRange: '13:00 - 17:00', 
-        color: '#6dd5ed',
-        icon: 'fas fa-cloud-sun'
-    },
-    { 
-        id: 'evening', 
-        name: 'Tối', 
-        timeRange: '19:00 - 21:00', 
-        color: '#182848',
-        icon: 'fas fa-moon'
+// ================ AUDIO MANAGER ================
+class AudioManager {
+    constructor() {
+        this.audioContext = null;
+        this.source = null;
+        this.gainNode = null;
+        this.oscillator = null;
+        this.isPlaying = false;
+        this.currentSound = null;
     }
-];
 
-// ================ POMODORO TIMER ================
-let timerInterval = null;
-let isTimerRunning = false;
-let isWorkSession = true;
-let currentMinutes = AppState.pomodoroSettings.workDuration;
-let currentSeconds = 0;
+    init() {
+        if (!this.audioContext) {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.gainNode = this.audioContext.createGain();
+            this.gainNode.connect(this.audioContext.destination);
+        }
+    }
 
-function formatTime(minutes, seconds) {
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-}
-
-function updateTimerDisplay() {
-    elements.timerDisplay.textContent = formatTime(currentMinutes, currentSeconds);
-}
-
-function startTimer() {
-    if (!isTimerRunning) {
-        isTimerRunning = true;
-        elements.startBtn.disabled = true;
-        elements.pauseBtn.disabled = false;
+    async playSound(type) {
+        this.init();
         
-        timerInterval = setInterval(() => {
-            if (currentSeconds === 0) {
-                if (currentMinutes === 0) {
-                    // Timer completed
-                    timerCompleted();
-                } else {
-                    currentMinutes--;
-                    currentSeconds = 59;
-                }
-            } else {
-                currentSeconds--;
+        // Stop current sound
+        this.stopSound();
+
+        // Create oscillator based on sound type
+        this.oscillator = this.audioContext.createOscillator();
+        this.oscillator.connect(this.gainNode);
+        
+        switch(type) {
+            case 'forest':
+                this.oscillator.frequency.setValueAtTime(200, this.audioContext.currentTime);
+                this.oscillator.type = 'sine';
+                break;
+            case 'rain':
+                this.oscillator.frequency.setValueAtTime(400, this.audioContext.currentTime);
+                this.oscillator.type = 'triangle';
+                break;
+            case 'ocean':
+                this.oscillator.frequency.setValueAtTime(100, this.audioContext.currentTime);
+                this.oscillator.type = 'sawtooth';
+                break;
+            case 'white-noise':
+                this.playWhiteNoise();
+                return;
+        }
+
+        this.oscillator.start();
+        this.isPlaying = true;
+        this.currentSound = type;
+
+        // Add modulation for more natural sound
+        this.addModulation();
+    }
+
+    playWhiteNoise() {
+        const bufferSize = 2 * this.audioContext.sampleRate;
+        const noiseBuffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        
+        for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+        }
+        
+        const whiteNoise = this.audioContext.createBufferSource();
+        whiteNoise.buffer = noiseBuffer;
+        whiteNoise.loop = true;
+        whiteNoise.connect(this.gainNode);
+        whiteNoise.start();
+        
+        this.source = whiteNoise;
+        this.isPlaying = true;
+        this.currentSound = 'white-noise';
+    }
+
+    addModulation() {
+        const lfo = this.audioContext.createOscillator();
+        const lfoGain = this.audioContext.createGain();
+        
+        lfo.frequency.setValueAtTime(5, this.audioContext.currentTime);
+        lfoGain.gain.setValueAtTime(20, this.audioContext.currentTime);
+        
+        lfo.connect(lfoGain);
+        lfoGain.connect(this.oscillator.frequency);
+        lfo.start();
+    }
+
+    setVolume(value) {
+        if (this.gainNode) {
+            this.gainNode.gain.setValueAtTime(value / 100, this.audioContext.currentTime);
+        }
+        AppState.sound.volume = value;
+        localStorage.setItem('2n1_volume', value);
+    }
+
+    stopSound() {
+        if (this.oscillator) {
+            this.oscillator.stop();
+            this.oscillator = null;
+        }
+        if (this.source) {
+            this.source.stop();
+            this.source = null;
+        }
+        this.isPlaying = false;
+        this.currentSound = null;
+    }
+
+    playCompleteSound() {
+        this.init();
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 1);
+        
+        oscillator.start();
+        oscillator.stop(this.audioContext.currentTime + 1);
+    }
+}
+
+const audioManager = new AudioManager();
+
+// ================ PET MANAGER ================
+class PetManager {
+    constructor() {
+        this.petTypes = [
+            { id: 1, name: 'Mèo Con', price: 100, image: 'cat.png', happiness: 50, hunger: 100 },
+            { id: 2, name: 'Cún Con', price: 150, image: 'dog.png', happiness: 60, hunger: 80 },
+            { id: 3, name: 'Thỏ Trắng', price: 120, image: 'rabbit.png', happiness: 70, hunger: 70 },
+            { id: 4, name: 'Gấu Trúc', price: 200, image: 'panda.png', happiness: 80, hunger: 90 },
+            { id: 5, name: 'Rồng Nhỏ', price: 500, image: 'dragon.png', happiness: 100, hunger: 60 },
+            { id: 6, name: 'Kỳ Lân', price: 300, image: 'unicorn.png', happiness: 90, hunger: 70 }
+        ];
+    }
+
+    getAvailablePets() {
+        return this.petTypes.filter(pet => !AppState.pets.includes(pet.id));
+    }
+
+    buyPet(petId) {
+        const pet = this.petTypes.find(p => p.id === petId);
+        if (!pet) return false;
+        
+        if (AppState.points >= pet.price) {
+            AppState.points -= pet.price;
+            AppState.pets.push(petId);
+            
+            if (!AppState.currentPet) {
+                this.selectPet(petId);
             }
             
-            updateTimerDisplay();
+            this.save();
+            return true;
+        }
+        return false;
+    }
+
+    selectPet(petId) {
+        AppState.currentPet = petId;
+        this.save();
+    }
+
+    feedPet() {
+        if (AppState.currentPet) {
+            AppState.petStats.hunger = Math.min(100, AppState.petStats.hunger + 20);
+            AppState.petStats.happiness += 5;
+            this.save();
+        }
+    }
+
+    playWithPet() {
+        if (AppState.currentPet) {
+            AppState.petStats.happiness = Math.min(100, AppState.petStats.happiness + 15);
+            AppState.petStats.hunger = Math.max(0, AppState.petStats.hunger - 10);
+            this.save();
+        }
+    }
+
+    addExp(amount) {
+        if (AppState.currentPet) {
+            AppState.petStats.exp += amount;
+            
+            // Level up
+            const expNeeded = AppState.petStats.level * 100;
+            if (AppState.petStats.exp >= expNeeded) {
+                AppState.petStats.level++;
+                AppState.petStats.exp -= expNeeded;
+                showNotification(`Thú cưng của bạn đã lên cấp ${AppState.petStats.level}! 🎉`);
+            }
+            
+            this.save();
+        }
+    }
+
+    decreaseStats() {
+        if (AppState.currentPet) {
+            AppState.petStats.happiness = Math.max(0, AppState.petStats.happiness - 1);
+            AppState.petStats.hunger = Math.max(0, AppState.petStats.hunger - 1);
+            this.save();
+        }
+    }
+
+    save() {
+        localStorage.setItem('2n1_points', AppState.points);
+        localStorage.setItem('2n1_pets', JSON.stringify(AppState.pets));
+        localStorage.setItem('2n1_current_pet', JSON.stringify(AppState.currentPet));
+        localStorage.setItem('2n1_pet_stats', JSON.stringify(AppState.petStats));
+        updatePetDisplay();
+    }
+}
+
+const petManager = new PetManager();
+
+// ================ TASK MANAGER ================
+class TaskManager {
+    constructor() {
+        this.timeSlots = [
+            { id: 'morning', name: 'Sáng', range: '8:00 - 12:00', icon: 'fa-sun' },
+            { id: 'afternoon', name: 'Chiều', range: '13:00 - 17:00', icon: 'fa-cloud-sun' },
+            { id: 'evening', name: 'Tối', range: '19:00 - 21:00', icon: 'fa-moon' }
+        ];
+    }
+
+    addTask(taskData) {
+        const newTask = {
+            id: Date.now(),
+            ...taskData,
+            completed: false,
+            date: AppState.currentDate.toISOString().split('T')[0],
+            points: this.calculatePoints(taskData.duration)
+        };
+        
+        AppState.tasks.push(newTask);
+        this.save();
+        return newTask;
+    }
+
+    completeTask(taskId) {
+        const task = AppState.tasks.find(t => t.id === taskId);
+        if (task && !task.completed) {
+            task.completed = true;
+            
+            // Add points
+            AppState.points += task.points || 10;
+            
+            // Add exp to pet
+            petManager.addExp(task.points || 10);
+            
+            // Play sound
+            audioManager.playCompleteSound();
+            
+            this.save();
+            updatePoints();
+            return true;
+        }
+        return false;
+    }
+
+    calculatePoints(duration) {
+        const minutes = parseInt(duration) || 30;
+        return Math.floor(minutes / 5); // 5 phút = 1 điểm
+    }
+
+    getTodayTasks() {
+        const today = AppState.currentDate.toISOString().split('T')[0];
+        return AppState.tasks.filter(t => t.date === today);
+    }
+
+    getProgress() {
+        const todayTasks = this.getTodayTasks();
+        const completed = todayTasks.filter(t => t.completed).length;
+        const total = todayTasks.length;
+        
+        return {
+            completed,
+            total,
+            percent: total > 0 ? Math.round((completed / total) * 100) : 0
+        };
+    }
+
+    save() {
+        localStorage.setItem('2n1_tasks', JSON.stringify(AppState.tasks));
+        renderTasks();
+        updateProgress();
+    }
+}
+
+const taskManager = new TaskManager();
+
+// ================ SCHEDULE MANAGER ================
+class ScheduleManager {
+    constructor() {
+        this.days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
+    }
+
+    saveDay(day, schedule) {
+        if (!AppState.schedule[day]) {
+            AppState.schedule[day] = [];
+        }
+        AppState.schedule[day] = schedule;
+        localStorage.setItem('2n1_schedule', JSON.stringify(AppState.schedule));
+    }
+
+    getTotalStudyTime() {
+        let total = 0;
+        Object.values(AppState.schedule).forEach(day => {
+            day.forEach(task => {
+                total += parseInt(task.duration) || 0;
+            });
+        });
+        return total;
+    }
+
+    renderSchedule() {
+        const container = document.getElementById('week-schedule');
+        container.innerHTML = '';
+        
+        this.days.forEach((day, index) => {
+            const daySchedule = AppState.schedule[day] || [];
+            const totalTime = daySchedule.reduce((sum, task) => sum + (parseInt(task.duration) || 0), 0);
+            
+            const dayCard = document.createElement('div');
+            dayCard.className = 'day-card';
+            dayCard.innerHTML = `
+                <div class="day-name">${day}</div>
+                <div class="day-tasks">${daySchedule.length} môn</div>
+                <div class="day-study-time">${totalTime} phút</div>
+                <div class="day-schedule-inputs" id="schedule-${index}">
+                    ${daySchedule.map((task, i) => `
+                        <input type="text" class="day-schedule-input" 
+                               value="${task.name}" 
+                               placeholder="Môn học" 
+                               data-day="${day}" 
+                               data-index="${i}">
+                    `).join('')}
+                    <input type="text" class="day-schedule-input" 
+                           placeholder="+ Thêm môn học" 
+                           data-day="${day}" 
+                           data-new="true">
+                </div>
+            `;
+            
+            container.appendChild(dayCard);
+            
+            // Add input listeners
+            dayCard.querySelectorAll('.day-schedule-input').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    this.handleScheduleInput(day, e.target);
+                });
+            });
+        });
+    }
+
+    handleScheduleInput(day, input) {
+        const index = input.dataset.index;
+        const value = input.value.trim();
+        
+        if (!AppState.schedule[day]) {
+            AppState.schedule[day] = [];
+        }
+        
+        if (input.dataset.new) {
+            // Add new task
+            if (value) {
+                AppState.schedule[day].push({
+                    name: value,
+                    duration: 60 // Default 60 minutes
+                });
+            }
+        } else if (index !== undefined) {
+            // Update existing task
+            if (value) {
+                AppState.schedule[day][index].name = value;
+            } else {
+                // Remove if empty
+                AppState.schedule[day].splice(index, 1);
+            }
+        }
+        
+        this.save();
+        this.renderSchedule();
+    }
+
+    save() {
+        localStorage.setItem('2n1_schedule', JSON.stringify(AppState.schedule));
+    }
+}
+
+const scheduleManager = new ScheduleManager();
+
+// ================ RENDERING FUNCTIONS ================
+function renderTasks() {
+    const container = document.getElementById('time-slots-container');
+    const todayTasks = taskManager.getTodayTasks();
+    
+    container.innerHTML = '';
+    
+    taskManager.timeSlots.forEach(slot => {
+        const slotTasks = todayTasks.filter(t => t.time === slot.id);
+        
+        const slotElement = document.createElement('div');
+        slotElement.className = 'time-slot';
+        
+        slotElement.innerHTML = `
+            <div class="time-header">
+                <div class="time-range">
+                    <i class="fas ${slot.icon}"></i> ${slot.name} (${slot.range})
+                </div>
+                <span class="task-count">${slotTasks.length} nhiệm vụ</span>
+            </div>
+            <div class="slot-tasks">
+                ${slotTasks.length > 0 ? slotTasks.map(task => `
+                    <div class="task-item ${task.completed ? 'completed' : ''}" data-id="${task.id}">
+                        <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
+                        <span class="task-name">${task.name}</span>
+                        <span class="task-duration">${task.duration} phút</span>
+                        <span class="task-points"><i class="fas fa-star"></i> ${task.points}</span>
+                    </div>
+                `).join('') : `
+                    <div class="empty-slot">Chưa có nhiệm vụ</div>
+                `}
+            </div>
+        `;
+        
+        container.appendChild(slotElement);
+    });
+    
+    // Add event listeners
+    document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const taskItem = this.closest('.task-item');
+            const taskId = parseInt(taskItem.dataset.id);
+            
+            if (this.checked) {
+                taskManager.completeTask(taskId);
+            }
+        });
+    });
+}
+
+function updateProgress() {
+    const progress = taskManager.getProgress();
+    const progressBar = document.getElementById('daily-progress-bar');
+    const progressPercent = document.getElementById('progress-percent');
+    const completedCount = document.getElementById('completed-count');
+    const totalCount = document.getElementById('total-count');
+    
+    progressBar.style.width = `${progress.percent}%`;
+    progressPercent.textContent = `${progress.percent}%`;
+    completedCount.textContent = progress.completed;
+    totalCount.textContent = progress.total;
+}
+
+function updatePoints() {
+    const pointsDisplay = document.getElementById('user-points');
+    const shopPoints = document.getElementById('shop-points');
+    
+    pointsDisplay.textContent = AppState.points;
+    if (shopPoints) shopPoints.textContent = AppState.points;
+}
+
+function updatePetDisplay() {
+    if (!AppState.currentPet) {
+        document.getElementById('pet-name').textContent = 'Chưa có thú cưng';
+        return;
+    }
+    
+    const pet = petManager.petTypes.find(p => p.id === AppState.currentPet);
+    if (pet) {
+        document.getElementById('pet-name').textContent = pet.name;
+        document.getElementById('pet-level').textContent = `Cấp ${AppState.petStats.level}`;
+        document.getElementById('pet-happiness').style.width = `${AppState.petStats.happiness}%`;
+        document.getElementById('pet-hunger').style.width = `${AppState.petStats.hunger}%`;
+        
+        const expNeeded = AppState.petStats.level * 100;
+        const expPercent = (AppState.petStats.exp / expNeeded) * 100;
+        document.getElementById('pet-exp').style.width = `${expPercent}%`;
+        
+        document.getElementById('happiness-value').textContent = `${AppState.petStats.happiness}%`;
+        document.getElementById('hunger-value').textContent = `${AppState.petStats.hunger}%`;
+        document.getElementById('exp-value').textContent = `${AppState.petStats.exp}/${expNeeded}`;
+    }
+}
+
+// ================ POMODORO TIMER ================
+let pomodoroInterval = null;
+let pomodoroRunning = false;
+let pomodoroMinutes = AppState.pomodoro.workDuration;
+let pomodoroSeconds = 0;
+let pomodoroSession = 'work';
+
+function updatePomodoroDisplay() {
+    const display = document.getElementById('timer');
+    const sessionType = document.getElementById('session-type');
+    const progressRing = document.querySelector('.progress-ring__progress');
+    
+    display.textContent = `${pomodoroMinutes.toString().padStart(2, '0')}:${pomodoroSeconds.toString().padStart(2, '0')}`;
+    
+    // Update progress ring
+    const totalSeconds = pomodoroSession === 'work' 
+        ? AppState.pomodoro.workDuration * 60 
+        : AppState.pomodoro.breakDuration * 60;
+    const currentSeconds = pomodoroMinutes * 60 + pomodoroSeconds;
+    const progress = (totalSeconds - currentSeconds) / totalSeconds;
+    const circumference = 2 * Math.PI * 90;
+    const offset = circumference * progress;
+    progressRing.style.strokeDashoffset = offset;
+    
+    // Update session type text
+    if (pomodoroSession === 'work') {
+        sessionType.textContent = '🎯 Đang tập trung';
+    } else {
+        sessionType.textContent = '☕ Đang nghỉ';
+    }
+}
+
+function startPomodoro() {
+    if (!pomodoroRunning) {
+        pomodoroRunning = true;
+        document.getElementById('start-btn').disabled = true;
+        document.getElementById('pause-btn').disabled = false;
+        
+        pomodoroInterval = setInterval(() => {
+            if (pomodoroSeconds === 0) {
+                if (pomodoroMinutes === 0) {
+                    // Session complete
+                    completePomodoro();
+                } else {
+                    pomodoroMinutes--;
+                    pomodoroSeconds = 59;
+                }
+            } else {
+                pomodoroSeconds--;
+            }
+            
+            updatePomodoroDisplay();
         }, 1000);
     }
 }
 
-function pauseTimer() {
-    if (isTimerRunning) {
-        clearInterval(timerInterval);
-        isTimerRunning = false;
-        elements.startBtn.disabled = false;
-        elements.pauseBtn.disabled = true;
-        elements.startBtn.innerHTML = '<i class="fas fa-play"></i> Tiếp Tục';
+function pausePomodoro() {
+    if (pomodoroRunning) {
+        clearInterval(pomodoroInterval);
+        pomodoroRunning = false;
+        document.getElementById('start-btn').disabled = false;
+        document.getElementById('pause-btn').disabled = true;
     }
 }
 
-function resetTimer() {
-    clearInterval(timerInterval);
-    isTimerRunning = false;
-    isWorkSession = true;
-    currentMinutes = AppState.pomodoroSettings.workDuration;
-    currentSeconds = 0;
-    elements.sessionType.textContent = 'Sẵn sàng làm việc';
-    elements.startBtn.disabled = false;
-    elements.pauseBtn.disabled = true;
-    elements.startBtn.innerHTML = '<i class="fas fa-play"></i> Bắt Đầu';
-    updateTimerDisplay();
+function resetPomodoro() {
+    pausePomodoro();
+    pomodoroSession = 'work';
+    pomodoroMinutes = AppState.pomodoro.workDuration;
+    pomodoroSeconds = 0;
+    updatePomodoroDisplay();
 }
 
-function timerCompleted() {
-    clearInterval(timerInterval);
-    isTimerRunning = false;
+function completePomodoro() {
+    pausePomodoro();
+    audioManager.playCompleteSound();
     
-    // Play sound
-    playNotificationSound();
-    
-    // Switch session
-    if (isWorkSession) {
-        AppState.workSessionsCompleted++;
-        localStorage.setItem('2n1_pomodoro_sessions', AppState.workSessionsCompleted);
-        elements.pomodoroCount.textContent = AppState.workSessionsCompleted;
+    if (pomodoroSession === 'work') {
+        AppState.pomodoro.workSessionsCompleted++;
+        localStorage.setItem('2n1_pomodoro_sessions', AppState.pomodoro.workSessionsCompleted);
         
-        if (AppState.workSessionsCompleted % AppState.pomodoroSettings.sessionsBeforeLongBreak === 0) {
-            currentMinutes = AppState.pomodoroSettings.longBreakDuration;
-            elements.sessionType.textContent = `Nghỉ dài! Đã hoàn thành ${AppState.pomodoroSettings.sessionsBeforeLongBreak} phiên`;
-            isWorkSession = false;
+        // Add points
+        AppState.points += 5;
+        petManager.addExp(5);
+        updatePoints();
+        
+        if (AppState.pomodoro.workSessionsCompleted % AppState.pomodoro.sessionsBeforeLongBreak === 0) {
+            pomodoroMinutes = AppState.pomodoro.longBreakDuration;
+            showNotification('🎉 Nghỉ dài! Bạn xứng đáng được nghỉ ngơi!');
         } else {
-            currentMinutes = AppState.pomodoroSettings.breakDuration;
-            elements.sessionType.textContent = `Nghỉ ngắn! Thư giãn ${AppState.pomodoroSettings.breakDuration} phút`;
-            isWorkSession = false;
+            pomodoroMinutes = AppState.pomodoro.breakDuration;
         }
+        pomodoroSession = 'break';
     } else {
-        currentMinutes = AppState.pomodoroSettings.workDuration;
-        elements.sessionType.textContent = `Làm việc! Tập trung ${AppState.pomodoroSettings.workDuration} phút`;
-        isWorkSession = true;
+        pomodoroMinutes = AppState.pomodoro.workDuration;
+        pomodoroSession = 'work';
     }
     
-    updateTimerDisplay();
-    elements.startBtn.disabled = false;
-    elements.startBtn.innerHTML = '<i class="fas fa-play"></i> Tiếp Tục';
-    
-    showNotification(isWorkSession ? 
-        'Thời gian nghỉ đã hết! Quay lại làm việc!' : 
-        'Hoàn thành phiên làm việc! Hãy nghỉ ngơi!'
-    );
+    pomodoroSeconds = 0;
+    updatePomodoroDisplay();
+    document.getElementById('start-btn').disabled = false;
 }
 
-function playNotificationSound() {
-    try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.value = 800;
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 1);
-    } catch (e) {
-        console.log('Không thể phát âm thanh:', e);
-    }
-}
-
-// ================ TASK MANAGEMENT ================
-function renderTasks() {
-    elements.timeSlotsContainer.innerHTML = '';
+// ================ SHOP FUNCTIONS ================
+function openShop() {
+    const modal = document.getElementById('shop-modal');
+    const grid = document.getElementById('pets-grid');
     
-    TIME_SLOTS.forEach(slot => {
-        const slotTasks = AppState.tasks.filter(task => 
-            task.time === slot.id && 
-            isSameDay(new Date(task.date || AppState.currentDate), AppState.currentDate)
-        );
+    grid.innerHTML = '';
+    
+    petManager.petTypes.forEach(pet => {
+        const owned = AppState.pets.includes(pet.id);
+        const current = AppState.currentPet === pet.id;
         
-        const completedCount = slotTasks.filter(task => task.completed).length;
-        const totalCount = slotTasks.length;
+        const petElement = document.createElement('div');
+        petElement.className = `pet-shop-item ${owned ? 'owned' : ''} ${current ? 'current' : ''}`;
         
-        const timeSlotElement = document.createElement('div');
-        timeSlotElement.className = 'time-slot';
-        timeSlotElement.style.borderLeftColor = slot.color;
-        
-        timeSlotElement.innerHTML = `
-            <div class="time-header">
-                <div class="time-range">
-                    <i class="${slot.icon}"></i>
-                    ${slot.name} (${slot.timeRange})
-                </div>
-                <div class="task-count">${totalCount} nhiệm vụ</div>
+        petElement.innerHTML = `
+            <img src="assets/pets/${pet.image}" alt="${pet.name}" class="pet-shop-image">
+            <div class="pet-shop-name">${pet.name}</div>
+            <div class="pet-shop-price">
+                <i class="fas fa-star"></i> ${pet.price}
             </div>
-            <div id="tasks-${slot.id}">
-                ${totalCount > 0 ? 
-                    slotTasks.map(task => `
-                        <div class="task-item ${task.completed ? 'completed' : ''}" data-id="${task.id}">
-                            <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
-                            <div class="task-name">${task.name}</div>
-                            <div class="task-duration">${task.duration}</div>
-                            <div class="task-actions">
-                                <button class="task-action-btn edit-task-btn" title="Sửa">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="task-action-btn delete-task-btn" title="Xóa">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `).join('') : 
-                    '<div class="empty-slot">Chưa có nhiệm vụ nào cho khung giờ này</div>'
-                }
-            </div>
+            <button class="pet-shop-btn" ${owned ? 'disabled' : ''} data-id="${pet.id}">
+                ${owned ? 'Đã sở hữu' : 'Mua'}
+            </button>
+            ${!owned && current ? '<span class="current-badge">Đang sử dụng</span>' : ''}
         `;
         
-        elements.timeSlotsContainer.appendChild(timeSlotElement);
-    });
-    
-    // Attach event listeners
-    attachTaskEventListeners();
-    updateTaskCounts();
-}
-
-function attachTaskEventListeners() {
-    // Checkbox events
-    document.querySelectorAll('.task-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', function(e) {
-            const taskId = parseInt(this.closest('.task-item').dataset.id);
-            const task = AppState.tasks.find(t => t.id === taskId);
-            
-            if (task) {
-                task.completed = this.checked;
-                this.closest('.task-item').classList.toggle('completed');
-                updateStats();
-                saveToLocalStorage();
-                showNotification(`Đã ${task.completed ? 'hoàn thành' : 'bỏ hoàn thành'} nhiệm vụ: ${task.name}`);
-            }
-        });
-    });
-    
-    // Edit button events
-    document.querySelectorAll('.edit-task-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
+        petElement.querySelector('button').addEventListener('click', (e) => {
             e.stopPropagation();
-            const taskId = parseInt(this.closest('.task-item').dataset.id);
-            openEditTaskModal(taskId);
-        });
-    });
-    
-    // Delete button events
-    document.querySelectorAll('.delete-task-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const taskId = parseInt(this.closest('.task-item').dataset.id);
-            deleteTask(taskId);
-        });
-    });
-    
-    // Task item click events
-    document.querySelectorAll('.task-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            if (!e.target.closest('.task-actions') && !e.target.classList.contains('task-checkbox')) {
-                const taskId = parseInt(this.dataset.id);
-                openTaskDetailModal(taskId);
+            if (!owned) {
+                if (petManager.buyPet(pet.id)) {
+                    showNotification(`🎉 Bạn đã mua ${pet.name} thành công!`);
+                    updatePoints();
+                    openShop(); // Refresh shop
+                } else {
+                    showNotification('❌ Không đủ điểm!', 'error');
+                }
             }
         });
-    });
-}
-
-function addNewTask(taskData) {
-    const newTask = {
-        id: AppState.tasks.length > 0 ? Math.max(...AppState.tasks.map(t => t.id)) + 1 : 1,
-        name: taskData.name,
-        time: taskData.time,
-        duration: formatDuration(taskData.duration),
-        completed: false,
-        priority: taskData.priority || 'medium',
-        description: taskData.description || '',
-        date: AppState.currentDate.toISOString().split('T')[0],
-        createdAt: new Date().toISOString()
-    };
-    
-    AppState.tasks.push(newTask);
-    renderTasks();
-    updateStats();
-    saveToLocalStorage();
-    showNotification('Đã thêm nhiệm vụ mới thành công!');
-}
-
-function updateTask(taskId, taskData) {
-    const taskIndex = AppState.tasks.findIndex(t => t.id === taskId);
-    if (taskIndex !== -1) {
-        AppState.tasks[taskIndex] = {
-            ...AppState.tasks[taskIndex],
-            name: taskData.name,
-            time: taskData.time,
-            duration: formatDuration(taskData.duration),
-            priority: taskData.priority || 'medium',
-            description: taskData.description || ''
-        };
         
-        renderTasks();
-        updateStats();
-        saveToLocalStorage();
-        showNotification('Đã cập nhật nhiệm vụ thành công!');
-    }
-}
-
-function deleteTask(taskId) {
-    if (confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này?')) {
-        AppState.tasks = AppState.tasks.filter(t => t.id !== taskId);
-        renderTasks();
-        updateStats();
-        saveToLocalStorage();
-        showNotification('Đã xóa nhiệm vụ thành công!');
-    }
-}
-
-function formatDuration(durationValue) {
-    if (durationValue === 'pomodoro') return '1 Pomodoro';
-    if (durationValue === '2pomodoro') return '2 Pomodoro';
-    
-    const duration = parseInt(durationValue);
-    if (duration < 60) return `${duration} phút`;
-    if (duration === 60) return '1 giờ';
-    return `${duration/60} giờ`;
-}
-
-function updateTaskCounts() {
-    TIME_SLOTS.forEach(slot => {
-        const slotTasks = AppState.tasks.filter(task => 
-            task.time === slot.id && 
-            isSameDay(new Date(task.date || AppState.currentDate), AppState.currentDate)
-        );
-        const taskCountElement = document.querySelector(`#tasks-${slot.id}`)?.closest('.time-slot')?.querySelector('.task-count');
-        if (taskCountElement) {
-            taskCountElement.textContent = `${slotTasks.length} nhiệm vụ`;
-        }
-    });
-}
-
-// ================ STATISTICS ================
-function updateStats() {
-    const todayTasks = AppState.tasks.filter(task => 
-        isSameDay(new Date(task.date || AppState.currentDate), AppState.currentDate)
-    );
-    
-    const totalTasks = todayTasks.length;
-    const completedTasks = todayTasks.filter(task => task.completed).length;
-    
-    // Update task counts
-    elements.completedCount.textContent = completedTasks;
-    elements.totalCount.textContent = totalTasks;
-    elements.completedTasks.textContent = completedTasks;
-    
-    // Update Pomodoro count
-    elements.pomodoroCount.textContent = AppState.workSessionsCompleted;
-    
-    // Calculate focus time
-    let focusMinutes = 0;
-    todayTasks.forEach(task => {
-        if (task.completed) {
-            if (task.duration.includes('phút')) {
-                focusMinutes += parseInt(task.duration);
-            } else if (task.duration.includes('giờ')) {
-                focusMinutes += parseInt(task.duration) * 60;
-            } else if (task.duration.includes('Pomodoro')) {
-                const pomodoroCount = parseInt(task.duration);
-                focusMinutes += pomodoroCount * 25;
+        petElement.addEventListener('click', () => {
+            if (owned) {
+                petManager.selectPet(pet.id);
+                updatePetDisplay();
+                openShop(); // Refresh to show current badge
             }
-        }
-    });
-    
-    const hours = Math.floor(focusMinutes / 60);
-    const minutes = focusMinutes % 60;
-    elements.focusTime.textContent = `${hours}h ${minutes}m`;
-    
-    // Calculate productivity
-    const productivity = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-    elements.productivity.textContent = `${productivity}%`;
-}
-
-// ================ DATE MANAGEMENT ================
-function updateDateDisplay() {
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    const dateString = AppState.currentDate.toLocaleDateString('vi-VN', options);
-    elements.currentDateElement.innerHTML = `<i class="fas fa-calendar-alt"></i> ${dateString}`;
-    
-    // Re-render tasks for the new date
-    renderTasks();
-    updateStats();
-}
-
-function isSameDay(date1, date2) {
-    return date1.getDate() === date2.getDate() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getFullYear() === date2.getFullYear();
-}
-
-// ================ MODAL MANAGEMENT ================
-function createModal(modalId, title, content, onClose = null) {
-    // Remove existing modal if any
-    const existingModal = document.getElementById(modalId);
-    if (existingModal) {
-        existingModal.remove();
-    }
-    
-    const modalHtml = `
-        <div class="modal-overlay" id="${modalId}">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">${title}</h3>
-                    <button class="close-modal" id="close-${modalId}">&times;</button>
-                </div>
-                ${content}
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
-    const modal = document.getElementById(modalId);
-    const closeBtn = document.getElementById(`close-${modalId}`);
-    
-    closeBtn.addEventListener('click', () => {
-        modal.classList.remove('active');
-        if (onClose) onClose();
-    });
-    
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.classList.remove('active');
-            if (onClose) onClose();
-        }
-    });
-    
-    elements.modals[modalId] = modal;
-    return modal;
-}
-
-function openAddTaskModal() {
-    const formHtml = `
-        <form id="add-task-form">
-            <div class="form-group">
-                <label class="form-label" for="task-name">Tên nhiệm vụ *</label>
-                <input type="text" class="form-input" id="task-name" placeholder="Nhập tên nhiệm vụ" required>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label" for="task-time">Thời gian *</label>
-                    <select class="form-select" id="task-time" required>
-                        <option value="">Chọn khung giờ</option>
-                        <option value="morning">Sáng (8:00 - 12:00)</option>
-                        <option value="afternoon">Chiều (13:00 - 17:00)</option>
-                        <option value="evening">Tối (19:00 - 21:00)</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="task-duration">Thời lượng *</label>
-                    <select class="form-select" id="task-duration" required>
-                        <option value="">Chọn thời lượng</option>
-                        <option value="15">15 phút</option>
-                        <option value="30">30 phút</option>
-                        <option value="45">45 phút</option>
-                        <option value="60">1 giờ</option>
-                        <option value="90">1.5 giờ</option>
-                        <option value="120">2 giờ</option>
-                        <option value="pomodoro">1 Pomodoro (25 phút)</option>
-                        <option value="2pomodoro">2 Pomodoro (50 phút)</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="task-priority">Mức độ ưu tiên</label>
-                <select class="form-select" id="task-priority">
-                    <option value="low">Thấp</option>
-                    <option value="medium" selected>Trung bình</option>
-                    <option value="high">Cao</option>
-                    <option value="urgent">Khẩn cấp</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="task-description">Mô tả (tùy chọn)</label>
-                <textarea class="form-textarea" id="task-description" placeholder="Mô tả chi tiết nhiệm vụ..."></textarea>
-            </div>
-            
-            <div class="form-actions">
-                <button type="button" class="btn secondary-btn" id="cancel-add-task">Hủy</button>
-                <button type="submit" class="btn btn-primary">Thêm Nhiệm Vụ</button>
-            </div>
-        </form>
-    `;
-    
-    const modal = createModal('add-task-modal', '<i class="fas fa-plus-circle"></i> Thêm Nhiệm Vụ Mới', formHtml);
-    
-    // Form submission
-    document.getElementById('add-task-form').addEventListener('submit', (e) => {
-        e.preventDefault();
+        });
         
-        const taskData = {
-            name: document.getElementById('task-name').value,
-            time: document.getElementById('task-time').value,
-            duration: document.getElementById('task-duration').value,
-            priority: document.getElementById('task-priority').value,
-            description: document.getElementById('task-description').value
-        };
-        
-        addNewTask(taskData);
-        modal.classList.remove('active');
-    });
-    
-    // Cancel button
-    document.getElementById('cancel-add-task').addEventListener('click', () => {
-        modal.classList.remove('active');
+        grid.appendChild(petElement);
     });
     
     modal.classList.add('active');
 }
 
-function openEditTaskModal(taskId) {
-    const task = AppState.tasks.find(t => t.id === taskId);
-    if (!task) return;
-    
-    // Extract duration value from display string
-    let durationValue = '30';
-    if (task.duration.includes('Pomodoro')) {
-        durationValue = task.duration.includes('2') ? '2pomodoro' : 'pomodoro';
-    } else if (task.duration.includes('giờ')) {
-        durationValue = (parseFloat(task.duration) * 60).toString();
-    } else {
-        durationValue = task.duration.replace(' phút', '');
-    }
-    
-    const formHtml = `
-        <form id="edit-task-form">
-            <div class="form-group">
-                <label class="form-label" for="edit-task-name">Tên nhiệm vụ *</label>
-                <input type="text" class="form-input" id="edit-task-name" value="${task.name}" required>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label" for="edit-task-time">Thời gian *</label>
-                    <select class="form-select" id="edit-task-time" required>
-                        <option value="morning" ${task.time === 'morning' ? 'selected' : ''}>Sáng (8:00 - 12:00)</option>
-                        <option value="afternoon" ${task.time === 'afternoon' ? 'selected' : ''}>Chiều (13:00 - 17:00)</option>
-                        <option value="evening" ${task.time === 'evening' ? 'selected' : ''}>Tối (19:00 - 21:00)</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="edit-task-duration">Thời lượng *</label>
-                    <select class="form-select" id="edit-task-duration" required>
-                        <option value="15" ${durationValue === '15' ? 'selected' : ''}>15 phút</option>
-                        <option value="30" ${durationValue === '30' ? 'selected' : ''}>30 phút</option>
-                        <option value="45" ${durationValue === '45' ? 'selected' : ''}>45 phút</option>
-                        <option value="60" ${durationValue === '60' ? 'selected' : ''}>1 giờ</option>
-                        <option value="90" ${durationValue === '90' ? 'selected' : ''}>1.5 giờ</option>
-                        <option value="120" ${durationValue === '120' ? 'selected' : ''}>2 giờ</option>
-                        <option value="pomodoro" ${durationValue === 'pomodoro' ? 'selected' : ''}>1 Pomodoro (25 phút)</option>
-                        <option value="2pomodoro" ${durationValue === '2pomodoro' ? 'selected' : ''}>2 Pomodoro (50 phút)</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="edit-task-priority">Mức độ ưu tiên</label>
-                <select class="form-select" id="edit-task-priority">
-                    <option value="low" ${task.priority === 'low' ? 'selected' : ''}>Thấp</option>
-                    <option value="medium" ${task.priority === 'medium' ? 'selected' : ''}>Trung bình</option>
-                    <option value="high" ${task.priority === 'high' ? 'selected' : ''}>Cao</option>
-                    <option value="urgent" ${task.priority === 'urgent' ? 'selected' : ''}>Khẩn cấp</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="edit-task-description">Mô tả</label>
-                <textarea class="form-textarea" id="edit-task-description">${task.description || ''}</textarea>
-            </div>
-            
-            <div class="form-actions">
-                <button type="button" class="btn secondary-btn" id="cancel-edit-task">Hủy</button>
-                <button type="submit" class="btn btn-primary">Cập Nhật</button>
-            </div>
-        </form>
+// ================ NOTIFICATION ================
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+        ${message}
     `;
     
-    const modal = createModal('edit-task-modal', '<i class="fas fa-edit"></i> Chỉnh Sửa Nhiệm Vụ', formHtml);
-    
-    // Form submission
-    document.getElementById('edit-task-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        const taskData = {
-            name: document.getElementById('edit-task-name').value,
-            time: document.getElementById('edit-task-time').value,
-            duration: document.getElementById('edit-task-duration').value,
-            priority: document.getElementById('edit-task-priority').value,
-            description: document.getElementById('edit-task-description').value
-        };
-        
-        updateTask(taskId, taskData);
-        modal.classList.remove('active');
-    });
-    
-    // Cancel button
-    document.getElementById('cancel-edit-task').addEventListener('click', () => {
-        modal.classList.remove('active');
-    });
-    
-    modal.classList.add('active');
-}
-
-function openTaskDetailModal(taskId) {
-    const task = AppState.tasks.find(t => t.id === taskId);
-    if (!task) return;
-    
-    const priorityColors = {
-        low: '#28a745',
-        medium: '#ffc107',
-        high: '#fd7e14',
-        urgent: '#dc3545'
-    };
-    
-    const priorityText = {
-        low: 'Thấp',
-        medium: 'Trung bình',
-        high: 'Cao',
-        urgent: 'Khẩn cấp'
-    };
-    
-    const timeSlotText = {
-        morning: 'Sáng (8:00 - 12:00)',
-        afternoon: 'Chiều (13:00 - 17:00)',
-        evening: 'Tối (19:00 - 21:00)'
-    };
-    
-    const contentHtml = `
-        <div class="task-detail">
-            <div class="detail-row">
-                <strong>Tên nhiệm vụ:</strong>
-                <span>${task.name}</span>
-            </div>
-            <div class="detail-row">
-                <strong>Trạng thái:</strong>
-                <span class="status-badge ${task.completed ? 'completed' : 'pending'}">
-                    ${task.completed ? 'Đã hoàn thành' : 'Chưa hoàn thành'}
-                </span>
-            </div>
-            <div class="detail-row">
-                <strong>Khung giờ:</strong>
-                <span>${timeSlotText[task.time]}</span>
-            </div>
-            <div class="detail-row">
-                <strong>Thời lượng:</strong>
-                <span>${task.duration}</span>
-            </div>
-            <div class="detail-row">
-                <strong>Mức độ ưu tiên:</strong>
-                <span class="priority-badge" style="background-color: ${priorityColors[task.priority] || '#6c757d'}">
-                    ${priorityText[task.priority] || task.priority}
-                </span>
-            </div>
-            ${task.description ? `
-                <div class="detail-row">
-                    <strong>Mô tả:</strong>
-                    <p>${task.description}</p>
-                </div>
-            ` : ''}
-            <div class="detail-row">
-                <strong>Ngày tạo:</strong>
-                <span>${new Date(task.createdAt).toLocaleDateString('vi-VN')}</span>
-            </div>
-        </div>
-        
-        <div class="form-actions">
-            <button type="button" class="btn secondary-btn" id="close-task-detail">Đóng</button>
-            <button type="button" class="btn btn-primary" id="edit-from-detail">Chỉnh Sửa</button>
-        </div>
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? 'linear-gradient(135deg, #4CAF50, #45a049)' : 'linear-gradient(135deg, #f44336, #d32f2f)'};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        z-index: 9999;
+        animation: slideIn 0.3s ease-out;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     `;
     
-    const modal = createModal('task-detail-modal', '<i class="fas fa-info-circle"></i> Chi Tiết Nhiệm Vụ', contentHtml);
+    document.body.appendChild(notification);
     
-    // Close button
-    document.getElementById('close-task-detail').addEventListener('click', () => {
-        modal.classList.remove('active');
-    });
-    
-    // Edit button
-    document.getElementById('edit-from-detail').addEventListener('click', () => {
-        modal.classList.remove('active');
-        setTimeout(() => openEditTaskModal(taskId), 300);
-    });
-    
-    modal.classList.add('active');
-}
-
-function openUserSettingsModal() {
-    const formHtml = `
-        <form id="user-settings-form">
-            <div class="form-group">
-                <label class="form-label" for="user-name">Tên người dùng *</label>
-                <input type="text" class="form-input" id="user-name" value="${AppState.user.name}" required>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="daily-goal">Mục tiêu hàng ngày (số nhiệm vụ)</label>
-                <input type="number" class="form-input" id="daily-goal" value="${AppState.user.dailyGoal}" min="1" max="20">
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label" for="work-start">Giờ bắt đầu làm việc</label>
-                    <input type="time" class="form-input" id="work-start" value="${AppState.user.workStart}">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="work-end">Giờ kết thúc làm việc</label>
-                    <input type="time" class="form-input" id="work-end" value="${AppState.user.workEnd}">
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="theme">Giao diện</label>
-                <select class="form-select" id="theme">
-                    <option value="light" ${AppState.user.theme === 'light' ? 'selected' : ''}>Sáng</option>
-                    <option value="dark" ${AppState.user.theme === 'dark' ? 'selected' : ''}>Tối</option>
-                </select>
-            </div>
-            
-            <div class="form-actions">
-                <button type="button" class="btn secondary-btn" id="cancel-user-settings">Hủy</button>
-                <button type="submit" class="btn btn-primary">Lưu Cài Đặt</button>
-            </div>
-        </form>
-    `;
-    
-    const modal = createModal('user-settings-modal', '<i class="fas fa-user-cog"></i> Cài Đặt Người Dùng', formHtml);
-    
-    // Form submission
-    document.getElementById('user-settings-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        AppState.user.name = document.getElementById('user-name').value;
-        AppState.user.dailyGoal = parseInt(document.getElementById('daily-goal').value) || 8;
-        AppState.user.workStart = document.getElementById('work-start').value;
-        AppState.user.workEnd = document.getElementById('work-end').value;
-        AppState.user.theme = document.getElementById('theme').value;
-        
-        elements.usernameElement.textContent = AppState.user.name;
-        saveToLocalStorage();
-        applyTheme();
-        modal.classList.remove('active');
-        showNotification('Đã cập nhật cài đặt thành công!');
-    });
-    
-    // Cancel button
-    document.getElementById('cancel-user-settings').addEventListener('click', () => {
-        modal.classList.remove('active');
-    });
-    
-    modal.classList.add('active');
-}
-
-function openPomodoroSettingsModal() {
-    const formHtml = `
-        <form id="pomodoro-settings-form">
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label" for="work-duration">Thời gian làm việc (phút)</label>
-                    <input type="number" class="form-input" id="work-duration" 
-                           value="${AppState.pomodoroSettings.workDuration}" min="5" max="60" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="break-duration">Thời gian nghỉ ngắn (phút)</label>
-                    <input type="number" class="form-input" id="break-duration" 
-                           value="${AppState.pomodoroSettings.breakDuration}" min="1" max="15" required>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="long-break-duration">Thời gian nghỉ dài (phút)</label>
-                <input type="number" class="form-input" id="long-break-duration" 
-                       value="${AppState.pomodoroSettings.longBreakDuration}" min="10" max="30" required>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="sessions-before-long-break">Số phiên trước nghỉ dài</label>
-                <input type="number" class="form-input" id="sessions-before-long-break" 
-                       value="${AppState.pomodoroSettings.sessionsBeforeLongBreak}" min="2" max="8" required>
-            </div>
-            
-            <div class="form-actions">
-                <button type="button" class="btn secondary-btn" id="cancel-pomodoro-settings">Hủy</button>
-                <button type="submit" class="btn btn-primary">Lưu Cài Đặt</button>
-            </div>
-        </form>
-    `;
-    
-    const modal = createModal('pomodoro-settings-modal', '<i class="fas fa-sliders-h"></i> Cài Đặt Pomodoro', formHtml);
-    
-    // Form submission
-    document.getElementById('pomodoro-settings-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        AppState.pomodoroSettings.workDuration = parseInt(document.getElementById('work-duration').value);
-        AppState.pomodoroSettings.breakDuration = parseInt(document.getElementById('break-duration').value);
-        AppState.pomodoroSettings.longBreakDuration = parseInt(document.getElementById('long-break-duration').value);
-        AppState.pomodoroSettings.sessionsBeforeLongBreak = parseInt(document.getElementById('sessions-before-long-break').value);
-        
-        saveToLocalStorage();
-        resetTimer(); // Reset với cài đặt mới
-        modal.classList.remove('active');
-        showNotification('Đã cập nhật cài đặt Pomodoro thành công!');
-    });
-    
-    // Cancel button
-    document.getElementById('cancel-pomodoro-settings').addEventListener('click', () => {
-        modal.classList.remove('active');
-    });
-    
-    modal.classList.add('active');
-}
-
-// ================ NOTIFICATION SYSTEM ================
-function showNotification(message, type = 'success', duration = 3000) {
-    elements.notificationMessage.textContent = message;
-    
-    // Set notification type
-    elements.notification.className = 'notification';
-    if (type === 'error') {
-        elements.notification.classList.add('error');
-        elements.notification.querySelector('h4').innerHTML = '<i class="fas fa-exclamation-circle"></i> Lỗi!';
-    } else if (type === 'warning') {
-        elements.notification.classList.add('warning');
-        elements.notification.querySelector('h4').innerHTML = '<i class="fas fa-exclamation-triangle"></i> Cảnh báo!';
-    } else {
-        elements.notification.querySelector('h4').innerHTML = '<i class="fas fa-check-circle"></i> Thành công!';
-    }
-    
-    // Show notification
-    elements.notification.style.display = 'block';
-    elements.notification.style.animation = 'slideIn 0.5s ease-out';
-    
-    // Hide after duration
     setTimeout(() => {
-        elements.notification.style.animation = 'slideOut 0.5s ease-out';
-        setTimeout(() => {
-            elements.notification.style.display = 'none';
-        }, 500);
-    }, duration);
-}
-
-// ================ LOCAL STORAGE ================
-function saveToLocalStorage() {
-    localStorage.setItem('2n1_tasks', JSON.stringify(AppState.tasks));
-    localStorage.setItem('2n1_user', JSON.stringify(AppState.user));
-    localStorage.setItem('2n1_pomodoro', JSON.stringify(AppState.pomodoroSettings));
-}
-
-// ================ THEME MANAGEMENT ================
-function applyTheme() {
-    if (AppState.user.theme === 'dark') {
-        document.documentElement.style.setProperty('--primary-color', '#6c8ce6');
-        document.documentElement.style.setProperty('--secondary-color', '#1a2b5c');
-        document.documentElement.style.setProperty('--accent-color', '#4dc9e6');
-        document.documentElement.style.setProperty('--light-color', '#2d3748');
-        document.documentElement.style.setProperty('--dark-color', '#1a202c');
-        document.documentElement.style.setProperty('--text-color', '#e2e8f0');
-        document.body.style.background = 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)';
-        document.body.style.color = '#e2e8f0';
-    } else {
-        // Reset to light theme
-        document.documentElement.style.setProperty('--primary-color', '#4b6cb7');
-        document.documentElement.style.setProperty('--secondary-color', '#182848');
-        document.documentElement.style.setProperty('--accent-color', '#6dd5ed');
-        document.documentElement.style.setProperty('--light-color', '#f8f9fa');
-        document.documentElement.style.setProperty('--dark-color', '#343a40');
-        document.documentElement.style.setProperty('--text-color', '#333');
-        document.body.style.background = 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)';
-        document.body.style.color = '#333';
-    }
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 
 // ================ EVENT LISTENERS ================
-function setupEventListeners() {
-    // Add task button
-    elements.addTaskBtn.addEventListener('click', openAddTaskModal);
+document.addEventListener('DOMContentLoaded', () => {
+    // Check login
+    if (!AppState.user) {
+        window.location.href = 'register.html';
+        return;
+    }
     
-    // Change date button
-    elements.changeDateBtn.addEventListener('click', () => {
-        const newDateStr = prompt('Nhập ngày mới (định dạng: dd/mm/yyyy):', 
-            `${AppState.currentDate.getDate()}/${AppState.currentDate.getMonth() + 1}/${AppState.currentDate.getFullYear()}`);
-        
-        if (newDateStr) {
-            const parts = newDateStr.split('/');
-            if (parts.length === 3) {
-                const day = parseInt(parts[0]);
-                const month = parseInt(parts[1]) - 1;
-                const year = parseInt(parts[2]);
-                
-                if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-                    AppState.currentDate = new Date(year, month, day);
-                    updateDateDisplay();
-                    showNotification('Đã thay đổi ngày hiển thị!');
-                } else {
-                    showNotification('Định dạng ngày không hợp lệ!', 'error');
-                }
-            } else {
-                showNotification('Định dạng ngày không hợp lệ!', 'error');
-            }
-        }
+    // Display username
+    document.getElementById('username').textContent = AppState.user.name;
+    
+    // Initial render
+    renderTasks();
+    updateProgress();
+    updatePoints();
+    updatePetDisplay();
+    scheduleManager.renderSchedule();
+    
+    // Sound controls
+    document.querySelectorAll('.sound-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const sound = btn.dataset.sound;
+            
+            document.querySelectorAll('.sound-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            audioManager.playSound(sound);
+            document.getElementById('current-sound').textContent = btn.querySelector('span').textContent;
+        });
     });
     
-    // Customize Pomodoro button
-    elements.customizePomodoroBtn.addEventListener('click', openPomodoroSettingsModal);
-    
-    // Edit stats button
-    elements.editStatsBtn.addEventListener('click', () => {
-        const newCompleted = prompt('Nhập số nhiệm vụ đã hoàn thành:', elements.completedTasks.textContent);
-        
-        if (newCompleted !== null && !isNaN(newCompleted) && newCompleted >= 0) {
-            elements.completedTasks.textContent = newCompleted;
-            elements.completedCount.textContent = newCompleted;
-            
-            // Recalculate productivity
-            const totalTasks = parseInt(elements.totalCount.textContent);
-            const productivity = totalTasks > 0 ? Math.round((parseInt(newCompleted) / totalTasks) * 100) : 0;
-            elements.productivity.textContent = `${productivity}%`;
-            
-            showNotification('Đã cập nhật thống kê thủ công!');
-        }
+    document.getElementById('volume-slider').addEventListener('input', (e) => {
+        audioManager.setVolume(e.target.value);
     });
     
-    // User info click
-    elements.userInfo.addEventListener('click', openUserSettingsModal);
+    document.getElementById('stop-sound').addEventListener('click', () => {
+        audioManager.stopSound();
+        document.querySelectorAll('.sound-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('current-sound').textContent = 'Không có';
+    });
     
-    // Settings link
-    elements.settingsLink.addEventListener('click', (e) => {
+    // Pet actions
+    document.getElementById('feed-pet').addEventListener('click', () => {
+        petManager.feedPet();
+        updatePetDisplay();
+    });
+    
+    document.getElementById('play-pet').addEventListener('click', () => {
+        petManager.playWithPet();
+        updatePetDisplay();
+    });
+    
+    // Pomodoro controls
+    document.getElementById('start-btn').addEventListener('click', startPomodoro);
+    document.getElementById('pause-btn').addEventListener('click', pausePomodoro);
+    document.getElementById('reset-btn').addEventListener('click', resetPomodoro);
+    
+    // Add task
+    document.getElementById('add-task-btn').addEventListener('click', () => {
+        document.getElementById('task-modal').classList.add('active');
+    });
+    
+    document.getElementById('close-task').addEventListener('click', () => {
+        document.getElementById('task-modal').classList.remove('active');
+    });
+    
+    document.getElementById('task-form').addEventListener('submit', (e) => {
         e.preventDefault();
-        openUserSettingsModal();
+        
+        taskManager.addTask({
+            name: document.getElementById('task-name').value,
+            time: document.getElementById('task-time').value,
+            duration: document.getElementById('task-duration').value,
+            priority: document.getElementById('task-priority').value
+        });
+        
+        document.getElementById('task-modal').classList.remove('active');
+        e.target.reset();
+        showNotification('✅ Đã thêm nhiệm vụ mới!');
     });
     
-    // Pomodoro timer controls
-    elements.startBtn.addEventListener('click', startTimer);
-    elements.pauseBtn.addEventListener('click', pauseTimer);
-    elements.resetBtn.addEventListener('click', resetTimer);
+    // Shop
+    document.querySelector('a[href="#shop"]').addEventListener('click', (e) => {
+        e.preventDefault();
+        openShop();
+    });
+    
+    document.getElementById('close-shop').addEventListener('click', () => {
+        document.getElementById('shop-modal').classList.remove('active');
+    });
+    
+    // Save schedule
+    document.getElementById('save-schedule-btn').addEventListener('click', () => {
+        scheduleManager.save();
+        showNotification('📚 Đã lưu lịch học!');
+    });
+    
+    // Floating button
+    document.getElementById('fab').addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    
+    // Decrease pet stats over time
+    setInterval(() => {
+        petManager.decreaseStats();
+        updatePetDisplay();
+    }, 60000); // Every minute
     
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-        // Ctrl/Cmd + N to add new task
+        // Ctrl/Cmd + N: New task
         if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
             e.preventDefault();
-            openAddTaskModal();
+            document.getElementById('add-task-btn').click();
         }
         
-        // Escape to close modals
-        if (e.key === 'Escape') {
-            Object.values(elements.modals).forEach(modal => {
-                if (modal.classList.contains('active')) {
-                    modal.classList.remove('active');
-                }
-            });
-        }
-        
-        // Space to control Pomodoro timer
-        if (e.key === ' ' && !e.target.matches('input, textarea, select')) {
+        // Space: Pause/Resume Pomodoro
+        if (e.key === ' ' && !e.target.matches('input, textarea')) {
             e.preventDefault();
-            if (isTimerRunning) {
-                pauseTimer();
+            if (pomodoroRunning) {
+                pausePomodoro();
             } else {
-                startTimer();
+                startPomodoro();
             }
         }
+        
+        // Escape: Close modals
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay.active').forEach(modal => {
+                modal.classList.remove('active');
+            });
+        }
     });
-}
-
-// ================ INITIALIZATION ================
-function init() {
-    // Apply theme
-    applyTheme();
-    
-    // Set user name
-    elements.usernameElement.textContent = AppState.user.name;
-    
-    // Update date display
-    updateDateDisplay();
-    
-    // Update stats
-    updateStats();
-    
-    // Setup event listeners
-    setupEventListeners();
-    
-    // Initial timer display
-    updateTimerDisplay();
-    
-    // Show welcome message
-    setTimeout(() => {
-        showNotification(`Chào mừng đến với 2N1, ${AppState.user.name}! Hãy bắt đầu quản lý thời gian của bạn.`);
-    }, 1000);
-}
-
-// ================ START APPLICATION ================
-document.addEventListener('DOMContentLoaded', init);
+});
