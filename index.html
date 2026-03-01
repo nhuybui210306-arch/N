@@ -3,1559 +3,283 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2N1 - Quản Lý Thời Gian Hiệu Quả</title>
+    <title>2N1 - Quản Lý Thời Gian Thông Minh</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            color: #333;
-            min-height: 100vh;
-            padding-bottom: 40px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        /* Header */
-        header {
-            background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
-            color: white;
-            padding: 20px 0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            font-size: 28px;
-            font-weight: 700;
-        }
-
-        .logo i {
-            margin-right: 10px;
-            color: #6dd5ed;
-        }
-
-        .logo span {
-            color: #6dd5ed;
-        }
-
-        nav ul {
-            display: flex;
-            list-style: none;
-        }
-
-        nav ul li {
-            margin-left: 30px;
-        }
-
-        nav ul li a {
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 16px;
-            transition: color 0.3s;
-        }
-
-        nav ul li a:hover {
-            color: #6dd5ed;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-        }
-
-        .user-info i {
-            margin-right: 8px;
-            font-size: 20px;
-        }
-
-        /* Main Content */
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 30px;
-            margin-top: 30px;
-        }
-
-        /* Today's Tasks Section */
-        .today-tasks {
-            background-color: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-        }
-
-        .section-title {
-            display: flex;
-            align-items: center;
-            margin-bottom: 25px;
-            color: #182848;
-            font-size: 22px;
-        }
-
-        .section-title i {
-            margin-right: 10px;
-            color: #4b6cb7;
-        }
-
-        .date-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 15px;
-            border-radius: 10px;
-        }
-
-        .current-date {
-            font-weight: 600;
-            color: #4b6cb7;
-        }
-
-        .tasks-summary {
-            font-weight: 500;
-            color: #495057;
-        }
-
-        .tasks-summary span {
-            color: #4b6cb7;
-            font-weight: 700;
-        }
-
-        /* Time Slots */
-        .time-slots {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .time-slot {
-            border-left: 5px solid #4b6cb7;
-            background-color: #f8f9fa;
-            border-radius: 0 10px 10px 0;
-            padding: 18px;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .time-slot:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-        }
-
-        .time-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            align-items: center;
-        }
-
-        .time-range {
-            font-weight: 600;
-            color: #182848;
-            font-size: 18px;
-        }
-
-        .task-count {
-            background-color: #4b6cb7;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-        }
-
-        .task-item {
-            background-color: white;
-            padding: 12px 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            border-left: 4px solid #6dd5ed;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        }
-
-        .task-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .task-checkbox {
-            margin-right: 12px;
-            transform: scale(1.2);
-        }
-
-        .task-name {
-            flex-grow: 1;
-            font-weight: 500;
-        }
-
-        .task-duration {
-            color: #6c757d;
-            font-size: 14px;
-            background-color: #f1f3f5;
-            padding: 4px 10px;
-            border-radius: 15px;
-            font-weight: 500;
-        }
-
-        .task-actions {
-            margin-left: 10px;
-            display: flex;
-            gap: 8px;
-        }
-
-        .task-action-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #6c757d;
-            font-size: 16px;
-            transition: color 0.2s;
-        }
-
-        .task-action-btn:hover {
-            color: #4b6cb7;
-        }
-
-        .completed {
-            opacity: 0.7;
-            border-left-color: #28a745;
-        }
-
-        .completed .task-name {
-            text-decoration: line-through;
-            color: #6c757d;
-        }
-
-        /* Pomodoro Section */
-        .pomodoro-section {
-            background-color: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-            margin-bottom: 30px;
-        }
-
-        .pomodoro-timer {
-            text-align: center;
-            background: linear-gradient(135deg, #182848 0%, #4b6cb7 100%);
-            color: white;
-            padding: 30px 20px;
-            border-radius: 15px;
-            margin-top: 15px;
-            margin-bottom: 20px;
-        }
-
-        .timer-display {
-            font-size: 64px;
-            font-weight: 700;
-            margin: 15px 0;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 2px;
-        }
-
-        .timer-label {
-            font-size: 18px;
-            margin-bottom: 10px;
-            color: #e9ecef;
-        }
-
-        .timer-controls {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 50px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            font-size: 16px;
-        }
-
-        .btn i {
-            margin-right: 8px;
-        }
-
-        .btn-start {
-            background-color: #28a745;
-            color: white;
-        }
-
-        .btn-pause {
-            background-color: #ffc107;
-            color: #212529;
-        }
-
-        .btn-reset {
-            background-color: #6c757d;
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .pomodoro-info {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 10px;
-        }
-
-        .pomodoro-info h4 {
-            color: #182848;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-        }
-
-        .pomodoro-info h4 i {
-            margin-right: 10px;
-            color: #4b6cb7;
-        }
-
-        .pomodoro-info p {
-            color: #495057;
-            line-height: 1.6;
-            font-size: 15px;
-        }
-
-        /* Stats Section */
-        .stats-section {
-            background-color: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #4b6cb7;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            color: #6c757d;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        /* Add Task Button */
-        .add-task-btn {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 6px 20px rgba(75, 108, 183, 0.4);
-            transition: all 0.3s;
-            z-index: 100;
-        }
-
-        .add-task-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 8px 25px rgba(75, 108, 183, 0.5);
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background-color: white;
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            animation: modalFadeIn 0.3s ease-out;
-        }
-
-        @keyframes modalFadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-
-        .modal-title {
-            font-size: 22px;
-            color: #182848;
-            display: flex;
-            align-items: center;
-        }
-
-        .modal-title i {
-            margin-right: 10px;
-            color: #4b6cb7;
-        }
-
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #6c757d;
-            transition: color 0.2s;
-        }
-
-        .close-modal:hover {
-            color: #dc3545;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #495057;
-        }
-
-        .form-input, .form-select, .form-textarea {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            font-family: 'Poppins', sans-serif;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-            outline: none;
-            border-color: #4b6cb7;
-            box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.1);
-        }
-
-        .form-textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-            margin-top: 30px;
-        }
-
-        .btn-cancel {
-            background-color: #6c757d;
-            color: white;
-        }
-
-        .btn-submit {
-            background-color: #4b6cb7;
-            color: white;
-        }
-
-        /* Notification */
-        .notification {
-            position: fixed;
-            top: 100px;
-            right: 30px;
-            background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            animation: slideIn 0.5s ease-out;
-            max-width: 300px;
-            display: none;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-
-        /* Responsive */
-        @media (max-width: 992px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-            
-            .header-content {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            nav ul {
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-            
-            nav ul li {
-                margin: 0 10px;
-            }
-            
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .timer-controls {
-                flex-wrap: wrap;
-            }
-            
-            .date-info {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .modal-content {
-                width: 95%;
-                padding: 20px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Header -->
-    <header>
+    <!-- Header với hiệu ứng -->
+    <header class="glass-header">
         <div class="container">
             <div class="header-content">
-                <div class="logo">
+                <div class="logo animate-logo">
                     <i class="fas fa-clock"></i>
-                    <span>2N1</span> - Quản Lý Thời Gian
+                    <span>2N1</span>
                 </div>
                 <nav>
                     <ul>
-                        <li><a href="#"><i class="fas fa-home"></i> Trang Chủ</a></li>
-                        <li><a href="#"><i class="fas fa-tasks"></i> Nhiệm Vụ</a></li>
-                        <li><a href="#"><i class="fas fa-chart-bar"></i> Thống Kê</a></li>
-                        <li><a href="#"><i class="fas fa-cog"></i> Cài Đặt</a></li>
+                        <li><a href="#home" class="nav-link active"><i class="fas fa-home"></i> Trang Chủ</a></li>
+                        <li><a href="#schedule" class="nav-link"><i class="fas fa-calendar-alt"></i> Lịch Học</a></li>
+                        <li><a href="#pets" class="nav-link"><i class="fas fa-paw"></i> Thú Cưng</a></li>
+                        <li><a href="#shop" class="nav-link"><i class="fas fa-store"></i> Cửa Hàng</a></li>
                     </ul>
                 </nav>
-                <div class="user-info">
+                <div class="user-info" id="user-info">
                     <i class="fas fa-user-circle"></i>
-                    <span id="username">Người Dùng 2N1</span>
+                    <span id="username"></span>
+                    <div class="points-badge" id="points-display">
+                        <i class="fas fa-star"></i> <span id="user-points">0</span>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
 
     <div class="container">
-        <div class="main-content">
-            <!-- Left Column: Today's Tasks -->
-            <div class="today-tasks">
-                <div class="section-title">
-                    <i class="fas fa-calendar-day"></i> 
-                    <div>Nhiệm Vụ Hôm Nay</div>
-                    <div style="margin-left: auto; font-size: 16px;">
-                        <button id="change-date-btn" class="btn" style="padding: 8px 15px; background-color: #e9ecef; color: #495057;">
-                            <i class="fas fa-calendar-alt"></i> Đổi ngày
+        <!-- Thanh tiến trình ngày -->
+        <div class="daily-progress">
+            <div class="progress-header">
+                <h3><i class="fas fa-chart-line"></i> Tiến Độ Hôm Nay</h3>
+                <span id="progress-percent">0%</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="daily-progress-bar" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Main Content với Grid Layout -->
+        <div class="main-grid">
+            <!-- Left Column: Tasks và Lịch -->
+            <div class="left-column">
+                <!-- Nhiệm vụ hôm nay -->
+                <div class="card glass-card" id="home">
+                    <div class="card-header">
+                        <h2><i class="fas fa-tasks"></i> Nhiệm Vụ Hôm Nay</h2>
+                        <button class="btn-add-task" id="add-task-btn">
+                            <i class="fas fa-plus"></i> Thêm
                         </button>
                     </div>
-                </h2>
-                
-                <div class="date-info">
-                    <div class="current-date" id="current-date">
-                        <i class="fas fa-calendar-alt"></i> Thứ Tư, 28 tháng 8, 2024
+                    
+                    <div class="date-info">
+                        <div class="current-date" id="current-date"></div>
+                        <div class="tasks-summary">
+                            <span id="completed-count">0</span>/<span id="total-count">0</span> hoàn thành
+                        </div>
                     </div>
-                    <div class="tasks-summary">
-                        Đã hoàn thành: <span id="completed-count">4</span>/<span id="total-count">8</span> nhiệm vụ
-                    </div>
+                    
+                    <div class="time-slots" id="time-slots-container"></div>
                 </div>
-                
-                <div class="time-slots" id="time-slots-container">
-                    <!-- Time slots will be populated by JavaScript -->
+
+                <!-- Lịch học trong tuần -->
+                <div class="card glass-card" id="schedule">
+                    <div class="card-header">
+                        <h2><i class="fas fa-calendar-week"></i> Lịch Học Trong Tuần</h2>
+                        <button class="btn-save-schedule" id="save-schedule-btn">
+                            <i class="fas fa-save"></i> Lưu
+                        </button>
+                    </div>
+                    
+                    <div class="week-schedule" id="week-schedule">
+                        <!-- JavaScript sẽ tạo lịch ở đây -->
+                    </div>
                 </div>
             </div>
-            
-            <!-- Right Column: Pomodoro and Stats -->
+
+            <!-- Right Column: Pomodoro, Âm thanh, Thú cưng -->
             <div class="right-column">
-                <!-- Pomodoro Timer -->
-                <div class="pomodoro-section">
-                    <h2 class="section-title">
-                        <i class="fas fa-hourglass-half"></i> Phương Pháp Pomodoro
-                    </h2>
+                <!-- Pomodoro Timer với hiệu ứng -->
+                <div class="card glass-card pomodoro-card">
+                    <h2><i class="fas fa-hourglass-half"></i> Pomodoro</h2>
                     
                     <div class="pomodoro-timer">
-                        <div class="timer-label">Phiên Làm Việc</div>
-                        <div class="timer-display" id="timer">25:00</div>
-                        <div class="timer-label" id="session-type">Sẵn sàng làm việc</div>
+                        <div class="timer-circle">
+                            <svg class="progress-ring" width="200" height="200">
+                                <circle class="progress-ring__bg" stroke="#e0e0e0" stroke-width="8" fill="transparent" r="90" cx="100" cy="100"/>
+                                <circle class="progress-ring__progress" stroke="#4b6cb7" stroke-width="8" fill="transparent" r="90" cx="100" cy="100"/>
+                            </svg>
+                            <div class="timer-display" id="timer">25:00</div>
+                        </div>
+                        
+                        <div class="timer-label" id="session-type">Tập trung</div>
                         
                         <div class="timer-controls">
-                            <button class="btn btn-start" id="start-btn">
-                                <i class="fas fa-play"></i> Bắt Đầu
+                            <button class="btn-control" id="start-btn">
+                                <i class="fas fa-play"></i>
                             </button>
-                            <button class="btn btn-pause" id="pause-btn" disabled>
-                                <i class="fas fa-pause"></i> Tạm Dừng
+                            <button class="btn-control" id="pause-btn" disabled>
+                                <i class="fas fa-pause"></i>
                             </button>
-                            <button class="btn btn-reset" id="reset-btn">
-                                <i class="fas fa-redo"></i> Đặt Lại
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="pomodoro-info">
-                        <h4><i class="fas fa-info-circle"></i> Phương Pháp Pomodoro Là Gì?</h4>
-                        <p>Pomodoro là kỹ thuật quản lý thời gian: Làm việc tập trung 25 phút, nghỉ 5 phút. Sau 4 phiên, nghỉ dài 15-30 phút. Giúp tăng năng suất và giảm căng thẳng.</p>
-                        <div style="margin-top: 15px;">
-                            <button id="customize-pomodoro-btn" class="btn" style="padding: 8px 15px; background-color: #4b6cb7; color: white; font-size: 14px;">
-                                <i class="fas fa-sliders-h"></i> Tùy chỉnh Pomodoro
+                            <button class="btn-control" id="reset-btn">
+                                <i class="fas fa-redo"></i>
                             </button>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Statistics -->
-                <div class="stats-section">
-                    <h2 class="section-title">
-                        <i class="fas fa-chart-line"></i> Thống Kê Hôm Nay
-                    </h2>
+
+                <!-- Phòng âm thanh tập trung -->
+                <div class="card glass-card sound-card">
+                    <h2><i class="fas fa-headphones"></i> Âm Thanh Tập Trung</h2>
                     
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-value" id="completed-tasks">4</div>
-                            <div class="stat-label">Nhiệm vụ hoàn thành</div>
+                    <div class="sound-controls">
+                        <div class="volume-control">
+                            <i class="fas fa-volume-down"></i>
+                            <input type="range" id="volume-slider" min="0" max="100" value="50">
+                            <i class="fas fa-volume-up"></i>
                         </div>
                         
-                        <div class="stat-card">
-                            <div class="stat-value" id="pomodoro-count">3</div>
-                            <div class="stat-label">Pomodoro đã hoàn thành</div>
+                        <div class="sound-buttons">
+                            <button class="sound-btn" data-sound="forest">
+                                <i class="fas fa-tree"></i>
+                                <span>Rừng</span>
+                                <div class="sound-wave"></div>
+                            </button>
+                            <button class="sound-btn" data-sound="rain">
+                                <i class="fas fa-cloud-rain"></i>
+                                <span>Mưa</span>
+                                <div class="sound-wave"></div>
+                            </button>
+                            <button class="sound-btn" data-sound="ocean">
+                                <i class="fas fa-water"></i>
+                                <span>Biển</span>
+                                <div class="sound-wave"></div>
+                            </button>
+                            <button class="sound-btn" data-sound="white-noise">
+                                <i class="fas fa-wave-square"></i>
+                                <span>White Noise</span>
+                                <div class="sound-wave"></div>
+                            </button>
                         </div>
                         
-                        <div class="stat-card">
-                            <div class="stat-value" id="focus-time">2h 15m</div>
-                            <div class="stat-label">Thời gian tập trung</div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-value" id="productivity">75%</div>
-                            <div class="stat-label">Hiệu suất</div>
+                        <div class="playing-indicator" id="playing-indicator">
+                            <span>Đang phát: </span>
+                            <span id="current-sound">Không có</span>
+                            <button class="stop-sound" id="stop-sound">
+                                <i class="fas fa-stop"></i>
+                            </button>
                         </div>
                     </div>
-                    <div style="margin-top: 20px;">
-                        <button id="edit-stats-btn" class="btn" style="padding: 8px 15px; background-color: #e9ecef; color: #495057; width: 100%;">
-                            <i class="fas fa-edit"></i> Cập nhật thống kê thủ công
-                        </button>
+                </div>
+
+                <!-- Thú cưng ảo -->
+                <div class="card glass-card pet-card" id="pets">
+                    <h2><i class="fas fa-paw"></i> Thú Cưng Của Bạn</h2>
+                    
+                    <div class="pet-container">
+                        <div class="pet-display" id="pet-display">
+                            <img src="assets/pets/pet-default.png" alt="Thú cưng" id="pet-image" class="pet-image">
+                            <div class="pet-status">
+                                <div class="pet-name" id="pet-name">Chưa có thú cưng</div>
+                                <div class="pet-level" id="pet-level">Cấp 1</div>
+                            </div>
+                        </div>
+                        
+                        <div class="pet-stats">
+                            <div class="pet-stat">
+                                <i class="fas fa-heart"></i>
+                                <div class="stat-bar">
+                                    <div class="stat-fill" id="pet-happiness" style="width: 0%"></div>
+                                </div>
+                                <span id="happiness-value">0%</span>
+                            </div>
+                            <div class="pet-stat">
+                                <i class="fas fa-utensils"></i>
+                                <div class="stat-bar">
+                                    <div class="stat-fill" id="pet-hunger" style="width: 100%"></div>
+                                </div>
+                                <span id="hunger-value">100%</span>
+                            </div>
+                            <div class="pet-stat">
+                                <i class="fas fa-star"></i>
+                                <div class="stat-bar">
+                                    <div class="stat-fill" id="pet-exp" style="width: 0%"></div>
+                                </div>
+                                <span id="exp-value">0/100</span>
+                            </div>
+                        </div>
+                        
+                        <div class="pet-actions">
+                            <button class="pet-action" id="feed-pet">
+                                <i class="fas fa-apple-alt"></i> Cho ăn
+                            </button>
+                            <button class="pet-action" id="play-pet">
+                                <i class="fas fa-gamepad"></i> Chơi
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Add Task Button -->
-    <div class="add-task-btn" id="add-task-btn">
-        <i class="fas fa-plus"></i>
-    </div>
-    
-    <!-- Add Task Modal -->
-    <div class="modal" id="add-task-modal">
-        <div class="modal-content">
+
+    <!-- Cửa hàng thú cưng Modal -->
+    <div class="modal-overlay" id="shop-modal">
+        <div class="modal-content shop-modal">
             <div class="modal-header">
-                <h3 class="modal-title"><i class="fas fa-plus-circle"></i> Thêm Nhiệm Vụ Mới</h3>
-                <button class="close-modal" id="close-add-task-modal">&times;</button>
+                <h3><i class="fas fa-store"></i> Cửa Hàng Thú Cưng</h3>
+                <button class="close-modal" id="close-shop">&times;</button>
             </div>
             
-            <form id="add-task-form">
+            <div class="shop-points">
+                <i class="fas fa-star"></i> Điểm của bạn: <span id="shop-points">0</span>
+            </div>
+            
+            <div class="pets-grid" id="pets-grid">
+                <!-- Pet items sẽ được tạo bằng JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Thêm nhiệm vụ Modal -->
+    <div class="modal-overlay" id="task-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus-circle"></i> Thêm Nhiệm Vụ</h3>
+                <button class="close-modal" id="close-task">&times;</button>
+            </div>
+            
+            <form id="task-form">
                 <div class="form-group">
-                    <label class="form-label" for="task-name">Tên nhiệm vụ *</label>
-                    <input type="text" class="form-input" id="task-name" placeholder="Nhập tên nhiệm vụ" required>
+                    <input type="text" id="task-name" placeholder="Tên nhiệm vụ" required>
                 </div>
                 
                 <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label" for="task-time">Thời gian *</label>
-                        <select class="form-select" id="task-time" required>
-                            <option value="">Chọn khung giờ</option>
-                            <option value="morning">Sáng (8:00 - 12:00)</option>
-                            <option value="afternoon">Chiều (13:00 - 17:00)</option>
-                            <option value="evening">Tối (19:00 - 21:00)</option>
-                        </select>
-                    </div>
+                    <select id="task-time" required>
+                        <option value="">Chọn khung giờ</option>
+                        <option value="morning">Sáng (8:00 - 12:00)</option>
+                        <option value="afternoon">Chiều (13:00 - 17:00)</option>
+                        <option value="evening">Tối (19:00 - 21:00)</option>
+                    </select>
                     
-                    <div class="form-group">
-                        <label class="form-label" for="task-duration">Thời lượng *</label>
-                        <select class="form-select" id="task-duration" required>
-                            <option value="">Chọn thời lượng</option>
-                            <option value="15">15 phút</option>
-                            <option value="30">30 phút</option>
-                            <option value="45">45 phút</option>
-                            <option value="60">1 giờ</option>
-                            <option value="90">1.5 giờ</option>
-                            <option value="120">2 giờ</option>
-                            <option value="pomodoro">1 Pomodoro (25 phút)</option>
-                            <option value="2pomodoro">2 Pomodoro (50 phút)</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="task-priority">Mức độ ưu tiên</label>
-                    <select class="form-select" id="task-priority">
-                        <option value="low">Thấp</option>
-                        <option value="medium" selected>Trung bình</option>
-                        <option value="high">Cao</option>
-                        <option value="urgent">Khẩn cấp</option>
+                    <select id="task-duration" required>
+                        <option value="">Thời lượng</option>
+                        <option value="15">15 phút</option>
+                        <option value="30">30 phút</option>
+                        <option value="45">45 phút</option>
+                        <option value="60">1 giờ</option>
+                        <option value="90">1.5 giờ</option>
+                        <option value="120">2 giờ</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="task-description">Mô tả (tùy chọn)</label>
-                    <textarea class="form-textarea" id="task-description" placeholder="Mô tả chi tiết nhiệm vụ..."></textarea>
+                    <select id="task-priority">
+                        <option value="low">Ưu tiên thấp</option>
+                        <option value="medium" selected>Ưu tiên trung bình</option>
+                        <option value="high">Ưu tiên cao</option>
+                    </select>
                 </div>
                 
-                <div class="form-actions">
-                    <button type="button" class="btn btn-cancel" id="cancel-add-task">Hủy</button>
-                    <button type="submit" class="btn btn-submit">Thêm Nhiệm Vụ</button>
-                </div>
+                <button type="submit" class="btn-submit">Thêm nhiệm vụ</button>
             </form>
         </div>
     </div>
-    
-    <!-- Edit User Modal -->
-    <div class="modal" id="edit-user-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title"><i class="fas fa-user-edit"></i> Chỉnh Sửa Thông Tin</h3>
-                <button class="close-modal" id="close-edit-user-modal">&times;</button>
-            </div>
-            
-            <form id="edit-user-form">
-                <div class="form-group">
-                    <label class="form-label" for="user-name">Tên người dùng *</label>
-                    <input type="text" class="form-input" id="user-name" placeholder="Nhập tên của bạn" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="daily-goal">Mục tiêu hàng ngày</label>
-                    <input type="number" class="form-input" id="daily-goal" placeholder="Số nhiệm vụ mỗi ngày" min="1" max="20">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="work-start">Giờ bắt đầu làm việc</label>
-                    <input type="time" class="form-input" id="work-start" value="08:00">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="work-end">Giờ kết thúc làm việc</label>
-                    <input type="time" class="form-input" id="work-end" value="17:00">
-                </div>
-                
-                <div class="form-actions">
-                    <button type="button" class="btn btn-cancel" id="cancel-edit-user">Hủy</button>
-                    <button type="submit" class="btn btn-submit">Lưu Thay Đổi</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Edit Pomodoro Modal -->
-    <div class="modal" id="edit-pomodoro-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title"><i class="fas fa-sliders-h"></i> Tùy Chỉnh Pomodoro</h3>
-                <button class="close-modal" id="close-edit-pomodoro-modal">&times;</button>
-            </div>
-            
-            <form id="edit-pomodoro-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label" for="work-duration">Thời gian làm việc (phút) *</label>
-                        <input type="number" class="form-input" id="work-duration" min="5" max="60" value="25" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="break-duration">Thời gian nghỉ ngắn (phút) *</label>
-                        <input type="number" class="form-input" id="break-duration" min="1" max="15" value="5" required>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="long-break-duration">Thời gian nghỉ dài (phút) *</label>
-                    <input type="number" class="form-input" id="long-break-duration" min="10" max="30" value="15" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="sessions-before-long-break">Số phiên trước nghỉ dài *</label>
-                    <input type="number" class="form-input" id="sessions-before-long-break" min="2" max="8" value="4" required>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="button" class="btn btn-cancel" id="cancel-edit-pomodoro">Hủy</button>
-                    <button type="submit" class="btn btn-submit">Lưu Cài Đặt</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Notification -->
-    <div class="notification" id="notification">
-        <h4><i class="fas fa-check-circle"></i> Thành công!</h4>
-        <p id="notification-message">Thao tác đã được thực hiện thành công.</p>
-    </div>
 
-    <script>
-        // Application State
-        const state = {
-            tasks: [
-                { id: 1, name: "Kiểm tra email và lập kế hoạch ngày", time: "morning", duration: "30 phút", completed: true },
-                { id: 2, name: "Học lập trình ReactJS", time: "morning", duration: "2 Pomodoro", completed: true },
-                { id: 3, name: "Viết báo cáo dự án", time: "morning", duration: "1 Pomodoro", completed: false },
-                { id: 4, name: "Họp với nhóm dự án", time: "afternoon", duration: "1 giờ", completed: true },
-                { id: 5, name: "Thiết kế giao diện người dùng", time: "afternoon", duration: "2 Pomodoro", completed: false },
-                { id: 6, name: "Đọc sách phát triển bản thân", time: "afternoon", duration: "1 Pomodoro", completed: false },
-                { id: 7, name: "Tập thể dục", time: "evening", duration: "45 phút", completed: false },
-                { id: 8, name: "Lập kế hoạch cho ngày mai", time: "evening", duration: "20 phút", completed: false }
-            ],
-            user: {
-                name: "Người Dùng 2N1",
-                dailyGoal: 8,
-                workStart: "08:00",
-                workEnd: "17:00"
-            },
-            pomodoroSettings: {
-                workDuration: 25,
-                breakDuration: 5,
-                longBreakDuration: 15,
-                sessionsBeforeLongBreak: 4
-            },
-            currentDate: new Date()
-        };
+    <!-- Floating Action Button -->
+    <button class="fab" id="fab">
+        <i class="fas fa-chevron-up"></i>
+    </button>
 
-        // DOM Elements
-        const timeSlotsContainer = document.getElementById('time-slots-container');
-        const addTaskBtn = document.getElementById('add-task-btn');
-        const addTaskModal = document.getElementById('add-task-modal');
-        const closeAddTaskModal = document.getElementById('close-add-task-modal');
-        const cancelAddTask = document.getElementById('cancel-add-task');
-        const addTaskForm = document.getElementById('add-task-form');
-        const editUserModal = document.getElementById('edit-user-modal');
-        const closeEditUserModal = document.getElementById('close-edit-user-modal');
-        const cancelEditUser = document.getElementById('cancel-edit-user');
-        const editUserForm = document.getElementById('edit-user-form');
-        const editPomodoroModal = document.getElementById('edit-pomodoro-modal');
-        const closeEditPomodoroModal = document.getElementById('close-edit-pomodoro-modal');
-        const cancelEditPomodoro = document.getElementById('cancel-edit-pomodoro');
-        const editPomodoroForm = document.getElementById('edit-pomodoro-form');
-        const usernameElement = document.getElementById('username');
-        const notification = document.getElementById('notification');
-        const notificationMessage = document.getElementById('notification-message');
-        const changeDateBtn = document.getElementById('change-date-btn');
-        const currentDateElement = document.getElementById('current-date');
-        const customizePomodoroBtn = document.getElementById('customize-pomodoro-btn');
-        const editStatsBtn = document.getElementById('edit-stats-btn');
-
-        // Time slots configuration
-        const timeSlots = [
-            { id: 'morning', name: 'Sáng', timeRange: '8:00 - 12:00', color: '#4b6cb7' },
-            { id: 'afternoon', name: 'Chiều', timeRange: '13:00 - 17:00', color: '#6dd5ed' },
-            { id: 'evening', name: 'Tối', timeRange: '19:00 - 21:00', color: '#182848' }
-        ];
-
-        // Initialize the application
-        function init() {
-            renderTasks();
-            updateStats();
-            setupEventListeners();
-            loadUserData();
-            loadPomodoroSettings();
-            updateDateDisplay();
-        }
-
-        // Render tasks to the DOM
-        function renderTasks() {
-            timeSlotsContainer.innerHTML = '';
-            
-            timeSlots.forEach(slot => {
-                const slotTasks = state.tasks.filter(task => task.time === slot.id);
-                const completedCount = slotTasks.filter(task => task.completed).length;
-                
-                const timeSlotElement = document.createElement('div');
-                timeSlotElement.className = 'time-slot';
-                timeSlotElement.style.borderLeftColor = slot.color;
-                
-                timeSlotElement.innerHTML = `
-                    <div class="time-header">
-                        <div class="time-range">${slot.name} (${slot.timeRange})</div>
-                        <div class="task-count">${slotTasks.length} nhiệm vụ</div>
-                    </div>
-                    <div id="tasks-${slot.id}">
-                        ${slotTasks.length > 0 ? 
-                            slotTasks.map(task => `
-                                <div class="task-item ${task.completed ? 'completed' : ''}" data-id="${task.id}">
-                                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
-                                    <div class="task-name">${task.name}</div>
-                                    <div class="task-duration">${task.duration}</div>
-                                    <div class="task-actions">
-                                        <button class="task-action-btn edit-task-btn" title="Sửa">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="task-action-btn delete-task-btn" title="Xóa">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            `).join('') : 
-                            '<div style="text-align: center; padding: 15px; color: #6c757d; font-style: italic;">Chưa có nhiệm vụ nào</div>'
-                        }
-                    </div>
-                `;
-                
-                timeSlotsContainer.appendChild(timeSlotElement);
-            });
-            
-            // Add event listeners to task checkboxes and buttons
-            document.querySelectorAll('.task-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', handleTaskCompletion);
-            });
-            
-            document.querySelectorAll('.edit-task-btn').forEach(btn => {
-                btn.addEventListener('click', handleEditTask);
-            });
-            
-            document.querySelectorAll('.delete-task-btn').forEach(btn => {
-                btn.addEventListener('click', handleDeleteTask);
-            });
-            
-            updateTaskCounts();
-        }
-
-        // Update task completion status
-        function handleTaskCompletion(e) {
-            const taskId = parseInt(e.target.closest('.task-item').dataset.id);
-            const task = state.tasks.find(t => t.id === taskId);
-            
-            if (task) {
-                task.completed = e.target.checked;
-                e.target.closest('.task-item').classList.toggle('completed');
-                updateStats();
-                showNotification('Cập nhật trạng thái nhiệm vụ thành công!');
-                saveTasksToLocalStorage();
-            }
-        }
-
-        // Handle edit task
-        function handleEditTask(e) {
-            const taskId = parseInt(e.target.closest('.task-item').dataset.id);
-            const task = state.tasks.find(t => t.id === taskId);
-            
-            if (task) {
-                // Fill the form with task data
-                document.getElementById('task-name').value = task.name;
-                document.getElementById('task-time').value = task.time;
-                document.getElementById('task-duration').value = task.duration.replace(' phút', '').replace(' giờ', '').replace(' Pomodoro', '');
-                document.getElementById('task-priority').value = 'medium';
-                document.getElementById('task-description').value = '';
-                
-                // Change modal title and submit button
-                document.querySelector('#add-task-modal .modal-title').innerHTML = '<i class="fas fa-edit"></i> Chỉnh Sửa Nhiệm Vụ';
-                document.querySelector('#add-task-form .btn-submit').textContent = 'Cập Nhật Nhiệm Vụ';
-                
-                // Store task id in form for update
-                addTaskForm.dataset.editingTaskId = taskId;
-                
-                // Show modal
-                addTaskModal.style.display = 'flex';
-            }
-        }
-
-        // Handle delete task
-        function handleDeleteTask(e) {
-            if (confirm('Bạn có chắc chắn muốn xóa nhiệm vụ này?')) {
-                const taskId = parseInt(e.target.closest('.task-item').dataset.id);
-                state.tasks = state.tasks.filter(t => t.id !== taskId);
-                renderTasks();
-                updateStats();
-                showNotification('Đã xóa nhiệm vụ thành công!');
-                saveTasksToLocalStorage();
-            }
-        }
-
-        // Update statistics
-        function updateStats() {
-            const totalTasks = state.tasks.length;
-            const completedTasks = state.tasks.filter(task => task.completed).length;
-            const pomodoroCount = state.tasks.filter(task => task.completed && task.duration.includes('Pomodoro')).length;
-            
-            document.getElementById('completed-tasks').textContent = completedTasks;
-            document.getElementById('completed-count').textContent = completedTasks;
-            document.getElementById('total-count').textContent = totalTasks;
-            document.getElementById('pomodoro-count').textContent = pomodoroCount;
-            
-            // Calculate focus time (simplified)
-            let focusMinutes = 0;
-            state.tasks.forEach(task => {
-                if (task.completed) {
-                    if (task.duration.includes('phút')) {
-                        focusMinutes += parseInt(task.duration);
-                    } else if (task.duration.includes('giờ')) {
-                        focusMinutes += parseInt(task.duration) * 60;
-                    } else if (task.duration.includes('Pomodoro')) {
-                        const pomodoroCount = parseInt(task.duration);
-                        focusMinutes += pomodoroCount * 25;
-                    }
-                }
-            });
-            
-            const hours = Math.floor(focusMinutes / 60);
-            const minutes = focusMinutes % 60;
-            document.getElementById('focus-time').textContent = `${hours}h ${minutes}m`;
-            
-            // Calculate productivity
-            const productivity = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-            document.getElementById('productivity').textContent = `${productivity}%`;
-        }
-
-        // Update task counts in time slot headers
-        function updateTaskCounts() {
-            timeSlots.forEach(slot => {
-                const slotTasks = state.tasks.filter(task => task.time === slot.id);
-                const taskCountElement = document.querySelector(`#tasks-${slot.id}`).closest('.time-slot').querySelector('.task-count');
-                if (taskCountElement) {
-                    taskCountElement.textContent = `${slotTasks.length} nhiệm vụ`;
-                }
-            });
-        }
-
-        // Show notification
-        function showNotification(message, type = 'success') {
-            notificationMessage.textContent = message;
-            
-            if (type === 'success') {
-                notification.querySelector('h4').innerHTML = '<i class="fas fa-check-circle"></i> Thành công!';
-                notification.style.background = 'linear-gradient(90deg, #4b6cb7 0%, #182848 100%)';
-            } else if (type === 'error') {
-                notification.querySelector('h4').innerHTML = '<i class="fas fa-exclamation-circle"></i> Lỗi!';
-                notification.style.background = 'linear-gradient(90deg, #dc3545 0%, #c82333 100%)';
-            }
-            
-            notification.style.display = 'block';
-            
-            setTimeout(() => {
-                notification.style.animation = 'slideOut 0.5s ease-out';
-                setTimeout(() => {
-                    notification.style.display = 'none';
-                    notification.style.animation = 'slideIn 0.5s ease-out';
-                }, 500);
-            }, 3000);
-        }
-
-        // Setup event listeners
-        function setupEventListeners() {
-            // Add task button
-            addTaskBtn.addEventListener('click', () => {
-                // Reset form
-                addTaskForm.reset();
-                document.querySelector('#add-task-modal .modal-title').innerHTML = '<i class="fas fa-plus-circle"></i> Thêm Nhiệm Vụ Mới';
-                document.querySelector('#add-task-form .btn-submit').textContent = 'Thêm Nhiệm Vụ';
-                delete addTaskForm.dataset.editingTaskId;
-                
-                addTaskModal.style.display = 'flex';
-            });
-            
-            // Close add task modal
-            closeAddTaskModal.addEventListener('click', () => {
-                addTaskModal.style.display = 'none';
-            });
-            
-            cancelAddTask.addEventListener('click', () => {
-                addTaskModal.style.display = 'none';
-            });
-            
-            // Add task form submission
-            addTaskForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const taskName = document.getElementById('task-name').value;
-                const taskTime = document.getElementById('task-time').value;
-                const taskDuration = document.getElementById('task-duration').value;
-                const taskPriority = document.getElementById('task-priority').value;
-                const taskDescription = document.getElementById('task-description').value;
-                
-                // Format duration for display
-                let durationDisplay;
-                if (taskDuration === 'pomodoro') {
-                    durationDisplay = '1 Pomodoro';
-                } else if (taskDuration === '2pomodoro') {
-                    durationDisplay = '2 Pomodoro';
-                } else if (parseInt(taskDuration) < 60) {
-                    durationDisplay = `${taskDuration} phút`;
-                } else {
-                    durationDisplay = `${parseInt(taskDuration) / 60} giờ`;
-                }
-                
-                // Check if we're editing an existing task
-                const editingTaskId = addTaskForm.dataset.editingTaskId;
-                
-                if (editingTaskId) {
-                    // Update existing task
-                    const taskIndex = state.tasks.findIndex(t => t.id === parseInt(editingTaskId));
-                    if (taskIndex !== -1) {
-                        state.tasks[taskIndex].name = taskName;
-                        state.tasks[taskIndex].time = taskTime;
-                        state.tasks[taskIndex].duration = durationDisplay;
-                        showNotification('Cập nhật nhiệm vụ thành công!');
-                    }
-                } else {
-                    // Add new task
-                    const newTask = {
-                        id: state.tasks.length > 0 ? Math.max(...state.tasks.map(t => t.id)) + 1 : 1,
-                        name: taskName,
-                        time: taskTime,
-                        duration: durationDisplay,
-                        completed: false,
-                        priority: taskPriority,
-                        description: taskDescription
-                    };
-                    
-                    state.tasks.push(newTask);
-                    showNotification('Thêm nhiệm vụ mới thành công!');
-                }
-                
-                // Update UI
-                renderTasks();
-                updateStats();
-                addTaskModal.style.display = 'none';
-                saveTasksToLocalStorage();
-            });
-            
-            // User info click to edit
-            usernameElement.addEventListener('click', () => {
-                // Fill form with current user data
-                document.getElementById('user-name').value = state.user.name;
-                document.getElementById('daily-goal').value = state.user.dailyGoal;
-                document.getElementById('work-start').value = state.user.workStart;
-                document.getElementById('work-end').value = state.user.workEnd;
-                
-                editUserModal.style.display = 'flex';
-            });
-            
-            // Close edit user modal
-            closeEditUserModal.addEventListener('click', () => {
-                editUserModal.style.display = 'none';
-            });
-            
-            cancelEditUser.addEventListener('click', () => {
-                editUserModal.style.display = 'none';
-            });
-            
-            // Edit user form submission
-            editUserForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                state.user.name = document.getElementById('user-name').value;
-                state.user.dailyGoal = document.getElementById('daily-goal').value || 8;
-                state.user.workStart = document.getElementById('work-start').value;
-                state.user.workEnd = document.getElementById('work-end').value;
-                
-                usernameElement.textContent = state.user.name;
-                editUserModal.style.display = 'none';
-                showNotification('Cập nhật thông tin người dùng thành công!');
-                saveUserData();
-            });
-            
-            // Change date button
-            changeDateBtn.addEventListener('click', () => {
-                const newDateStr = prompt('Nhập ngày mới (định dạng: dd/mm/yyyy):', 
-                    `${state.currentDate.getDate()}/${state.currentDate.getMonth() + 1}/${state.currentDate.getFullYear()}`);
-                
-                if (newDateStr) {
-                    const parts = newDateStr.split('/');
-                    if (parts.length === 3) {
-                        const day = parseInt(parts[0]);
-                        const month = parseInt(parts[1]) - 1;
-                        const year = parseInt(parts[2]);
-                        
-                        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-                            state.currentDate = new Date(year, month, day);
-                            updateDateDisplay();
-                            showNotification('Đã thay đổi ngày hiển thị!');
-                        } else {
-                            showNotification('Định dạng ngày không hợp lệ!', 'error');
-                        }
-                    } else {
-                        showNotification('Định dạng ngày không hợp lệ!', 'error');
-                    }
-                }
-            });
-            
-            // Customize Pomodoro button
-            customizePomodoroBtn.addEventListener('click', () => {
-                // Fill form with current Pomodoro settings
-                document.getElementById('work-duration').value = state.pomodoroSettings.workDuration;
-                document.getElementById('break-duration').value = state.pomodoroSettings.breakDuration;
-                document.getElementById('long-break-duration').value = state.pomodoroSettings.longBreakDuration;
-                document.getElementById('sessions-before-long-break').value = state.pomodoroSettings.sessionsBeforeLongBreak;
-                
-                editPomodoroModal.style.display = 'flex';
-            });
-            
-            // Close edit Pomodoro modal
-            closeEditPomodoroModal.addEventListener('click', () => {
-                editPomodoroModal.style.display = 'none';
-            });
-            
-            cancelEditPomodoro.addEventListener('click', () => {
-                editPomodoroModal.style.display = 'none';
-            });
-            
-            // Edit Pomodoro form submission
-            editPomodoroForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                state.pomodoroSettings.workDuration = parseInt(document.getElementById('work-duration').value);
-                state.pomodoroSettings.breakDuration = parseInt(document.getElementById('break-duration').value);
-                state.pomodoroSettings.longBreakDuration = parseInt(document.getElementById('long-break-duration').value);
-                state.pomodoroSettings.sessionsBeforeLongBreak = parseInt(document.getElementById('sessions-before-long-break').value);
-                
-                editPomodoroModal.style.display = 'none';
-                showNotification('Cập nhật cài đặt Pomodoro thành công!');
-                savePomodoroSettings();
-                resetTimer(); // Reset timer with new settings
-            });
-            
-            // Edit stats button
-            editStatsBtn.addEventListener('click', () => {
-                const newCompleted = prompt('Nhập số nhiệm vụ đã hoàn thành:', 
-                    document.getElementById('completed-tasks').textContent);
-                
-                if (newCompleted !== null && !isNaN(newCompleted) && newCompleted >= 0) {
-                    document.getElementById('completed-tasks').textContent = newCompleted;
-                    document.getElementById('completed-count').textContent = newCompleted;
-                    
-                    // Recalculate productivity
-                    const totalTasks = state.tasks.length;
-                    const productivity = totalTasks > 0 ? Math.round((parseInt(newCompleted) / totalTasks) * 100) : 0;
-                    document.getElementById('productivity').textContent = `${productivity}%`;
-                    
-                    showNotification('Đã cập nhật thống kê thủ công!');
-                }
-            });
-            
-            // Close modals when clicking outside
-            window.addEventListener('click', (e) => {
-                if (e.target === addTaskModal) {
-                    addTaskModal.style.display = 'none';
-                }
-                if (e.target === editUserModal) {
-                    editUserModal.style.display = 'none';
-                }
-                if (e.target === editPomodoroModal) {
-                    editPomodoroModal.style.display = 'none';
-                }
-            });
-        }
-
-        // Update date display
-        function updateDateDisplay() {
-            const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-            const months = ['tháng 1', 'tháng 2', 'tháng 3', 'tháng 4', 'tháng 5', 'tháng 6', 
-                           'tháng 7', 'tháng 8', 'tháng 9', 'tháng 10', 'tháng 11', 'tháng 12'];
-            
-            const dayName = days[state.currentDate.getDay()];
-            const day = state.currentDate.getDate();
-            const month = months[state.currentDate.getMonth()];
-            const year = state.currentDate.getFullYear();
-            
-            currentDateElement.innerHTML = `<i class="fas fa-calendar-alt"></i> ${dayName}, ${day} ${month}, ${year}`;
-        }
-
-        // Load user data from localStorage
-        function loadUserData() {
-            const savedUser = localStorage.getItem('2n1_user');
-            if (savedUser) {
-                state.user = JSON.parse(savedUser);
-                usernameElement.textContent = state.user.name;
-            }
-        }
-
-        // Save user data to localStorage
-        function saveUserData() {
-            localStorage.setItem('2n1_user', JSON.stringify(state.user));
-        }
-
-        // Load Pomodoro settings from localStorage
-        function loadPomodoroSettings() {
-            const savedSettings = localStorage.getItem('2n1_pomodoro');
-            if (savedSettings) {
-                state.pomodoroSettings = JSON.parse(savedSettings);
-            }
-        }
-
-        // Save Pomodoro settings to localStorage
-        function savePomodoroSettings() {
-            localStorage.setItem('2n1_pomodoro', JSON.stringify(state.pomodoroSettings));
-        }
-
-        // Save tasks to localStorage
-        function saveTasksToLocalStorage() {
-            localStorage.setItem('2n1_tasks', JSON.stringify(state.tasks));
-        }
-
-        // Load tasks from localStorage
-        function loadTasksFromLocalStorage() {
-            const savedTasks = localStorage.getItem('2n1_tasks');
-            if (savedTasks) {
-                state.tasks = JSON.parse(savedTasks);
-            }
-        }
-
-        // Pomodoro Timer Logic (from previous version)
-        const timerDisplay = document.getElementById('timer');
-        const sessionType = document.getElementById('session-type');
-        const startBtn = document.getElementById('start-btn');
-        const pauseBtn = document.getElementById('pause-btn');
-        const resetBtn = document.getElementById('reset-btn');
-        
-        let timer;
-        let isRunning = false;
-        let isWorkSession = true;
-        let minutes = state.pomodoroSettings.workDuration;
-        let seconds = 0;
-        let workSessionsCompleted = 0;
-        
-        // Format time to display as MM:SS
-        function formatTime(min, sec) {
-            return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-        }
-        
-        // Update the timer display
-        function updateTimerDisplay() {
-            timerDisplay.textContent = formatTime(minutes, seconds);
-        }
-        
-        // Start the timer
-        function startTimer() {
-            if (!isRunning) {
-                isRunning = true;
-                startBtn.disabled = true;
-                pauseBtn.disabled = false;
-                
-                timer = setInterval(() => {
-                    if (seconds === 0) {
-                        if (minutes === 0) {
-                            // Timer completed
-                            clearInterval(timer);
-                            isRunning = false;
-                            
-                            // Play notification sound
-                            playNotificationSound();
-                            
-                            // Switch session type
-                            if (isWorkSession) {
-                                workSessionsCompleted++;
-                                document.getElementById('pomodoro-count').textContent = workSessionsCompleted;
-                                
-                                // If completed the required work sessions, start long break
-                                if (workSessionsCompleted % state.pomodoroSettings.sessionsBeforeLongBreak === 0) {
-                                    minutes = state.pomodoroSettings.longBreakDuration;
-                                    sessionType.textContent = `Nghỉ dài! Đã hoàn thành ${state.pomodoroSettings.sessionsBeforeLongBreak} phiên làm việc`;
-                                    isWorkSession = false;
-                                } else {
-                                    minutes = state.pomodoroSettings.breakDuration;
-                                    sessionType.textContent = 'Nghỉ ngắn! Thư giãn trong ' + state.pomodoroSettings.breakDuration + ' phút';
-                                    isWorkSession = false;
-                                }
-                            } else {
-                                minutes = state.pomodoroSettings.workDuration;
-                                sessionType.textContent = 'Làm việc! Tập trung trong ' + state.pomodoroSettings.workDuration + ' phút';
-                                isWorkSession = true;
-                            }
-                            
-                            updateTimerDisplay();
-                            startBtn.disabled = false;
-                            startBtn.innerHTML = '<i class="fas fa-play"></i> Tiếp Tục';
-                            
-                            // Show notification
-                            showSessionCompleteNotification();
-                        } else {
-                            minutes--;
-                            seconds = 59;
-                        }
-                    } else {
-                        seconds--;
-                    }
-                    
-                    updateTimerDisplay();
-                }, 1000);
-            }
-        }
-        
-        // Pause the timer
-        function pauseTimer() {
-            if (isRunning) {
-                clearInterval(timer);
-                isRunning = false;
-                startBtn.disabled = false;
-                pauseBtn.disabled = true;
-                startBtn.innerHTML = '<i class="fas fa-play"></i> Tiếp Tục';
-            }
-        }
-        
-        // Reset the timer
-        function resetTimer() {
-            clearInterval(timer);
-            isRunning = false;
-            isWorkSession = true;
-            minutes = state.pomodoroSettings.workDuration;
-            seconds = 0;
-            sessionType.textContent = 'Sẵn sàng làm việc';
-            startBtn.disabled = false;
-            pauseBtn.disabled = true;
-            startBtn.innerHTML = '<i class="fas fa-play"></i> Bắt Đầu';
-            updateTimerDisplay();
-        }
-        
-        // Play notification sound
-        function playNotificationSound() {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.value = 800;
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 1);
-        }
-        
-        // Show notification when session completes
-        function showSessionCompleteNotification() {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 100px;
-                right: 30px;
-                background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
-                color: white;
-                padding: 15px 20px;
-                border-radius: 10px;
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-                z-index: 1000;
-                animation: slideIn 0.5s ease-out;
-                max-width: 300px;
-            `;
-            
-            if (isWorkSession) {
-                notification.innerHTML = `
-                    <h4><i class="fas fa-check-circle"></i> Nghỉ giải lao!</h4>
-                    <p>Bạn đã hoàn thành một phiên làm việc. Hãy nghỉ ngơi một chút!</p>
-                `;
-            } else {
-                notification.innerHTML = `
-                    <h4><i class="fas fa-clock"></i> Quay lại làm việc!</h4>
-                    <p>Thời gian nghỉ đã kết thúc. Sẵn sàng cho phiên làm việc tiếp theo!</p>
-                `;
-            }
-            
-            document.body.appendChild(notification);
-            
-            // Remove notification after 5 seconds
-            setTimeout(() => {
-                notification.style.animation = 'slideOut 0.5s ease-out';
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 500);
-            }, 5000);
-        }
-        
-        // Event Listeners for Pomodoro Timer
-        startBtn.addEventListener('click', startTimer);
-        pauseBtn.addEventListener('click', pauseTimer);
-        resetBtn.addEventListener('click', resetTimer);
-        
-        // Initialize everything
-        loadTasksFromLocalStorage();
-        init();
-        updateTimerDisplay();
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
