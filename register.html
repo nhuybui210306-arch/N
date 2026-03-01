@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký - 2N1 Quản Lý Thời Gian</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            text-align: center;
+            color: white;
+        }
+
+        .header .logo {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header .logo i {
+            margin-right: 10px;
+            color: #ffd700;
+        }
+
+        .header h2 {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .register-form {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .form-group .toggle-password {
+            left: auto;
+            right: 15px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .form-group .toggle-password:hover {
+            color: #667eea;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-control.error {
+            border-color: #f44336;
+        }
+
+        .error-message {
+            color: #f44336;
+            font-size: 12px;
+            margin-top: 5px;
+            margin-left: 45px;
+            display: none;
+        }
+
+        .form-group.error .error-message {
+            display: block;
+        }
+
+        .password-strength {
+            margin-top: 10px;
+            margin-left: 45px;
+        }
+
+        .strength-bar {
+            height: 5px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+
+        .strength-progress {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s;
+        }
+
+        .strength-text {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .checkbox-group {
+            margin-left: 45px;
+            margin-bottom: 25px;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-group a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .checkbox-group a:hover {
+            text-decoration: underline;
+        }
+
+        .btn-register {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-register:active {
+            transform: translateY(0);
+        }
+
+        .login-link {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .social-login {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .social-login p {
+            color: #999;
+            font-size: 14px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .social-login p::before,
+        .social-login p::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 30%;
+            height: 1px;
+            background: #e0e0e0;
+        }
+
+        .social-login p::before {
+            left: 0;
+        }
+
+        .social-login p::after {
+            right: 0;
+        }
+
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .social-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .social-icon:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .social-icon.google {
+            background: #DB4437;
+        }
+
+        .social-icon.facebook {
+            background: #4267B2;
+        }
+
+        .social-icon.github {
+            background: #333;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 30px;
+            }
+
+            .register-form {
+                padding: 30px 20px;
+            }
+
+            .header .logo {
+                font-size: 36px;
+            }
+
+            .header h2 {
+                font-size: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 10px;
+            }
+
+            .form-control {
+                font-size: 14px;
+                padding: 12px 12px 12px 40px;
+            }
+
+            .form-group i {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-clock"></i> 2N1
+            </div>
+            <h2>Tạo Tài Khoản Mới</h2>
+            <p>Bắt đầu hành trình quản lý thời gian hiệu quả!</p>
+        </div>
+
+        <div class="register-form">
+            <form id="registerForm">
+                <!-- Họ và tên -->
+                <div class="form-group" id="name-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" class="form-control" id="fullname" placeholder="Họ và tên" required>
+                    <div class="error-message" id="name-error">Vui lòng nhập họ tên hợp lệ (ít nhất 2 ký tự)</div>
+                </div>
+
+                <!-- Tuổi -->
+                <div class="form-group" id="age-group">
+                    <i class="fas fa-calendar-alt"></i>
+                    <input type="number" class="form-control" id="age" placeholder="Tuổi" min="1" max="120" required>
+                    <div class="error-message" id="age-error">Vui lòng nhập tuổi từ 1 đến 120</div>
+                </div>
+
+                <!-- Email -->
+                <div class="form-group" id="email-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" class="form-control" id="email" placeholder="Địa chỉ email" required>
+                    <div class="error-message" id="email-error">Vui lòng nhập email hợp lệ</div>
+                </div>
+
+                <!-- Mật khẩu -->
+                <div class="form-group" id="password-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" class="form-control" id="password" placeholder="Mật khẩu" required>
+                    <i class="fas fa-eye toggle-password" id="togglePassword"></i>
+                    <div class="error-message" id="password-error">Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số</div>
+                    
+                    <!-- Thanh đo độ mạnh mật khẩu -->
+                    <div class="password-strength">
+                        <div class="strength-bar">
+                            <div class="strength-progress" id="strength-progress"></div>
+                        </div>
+                        <span class="strength-text" id="strength-text">Độ mạnh: Yếu</span>
+                    </div>
+                </div>
+
+                <!-- Xác nhận mật khẩu -->
+                <div class="form-group" id="confirm-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" class="form-control" id="confirmPassword" placeholder="Xác nhận mật khẩu" required>
+                    <i class="fas fa-eye toggle-password" id="toggleConfirmPassword"></i>
+                    <div class="error-message" id="confirm-error">Mật khẩu xác nhận không khớp</div>
+                </div>
+
+                <!-- Đồng ý điều khoản -->
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="terms" required>
+                        Tôi đồng ý với <a href="#">Điều khoản dịch vụ</a> và <a href="#">Chính sách bảo mật</a>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-register" id="registerBtn">
+                    <i class="fas fa-user-plus"></i> Đăng Ký
+                </button>
+
+                <div class="login-link">
+                    Đã có tài khoản? <a href="#" id="loginLink">Đăng nhập ngay</a>
+                </div>
+
+                <div class="social-login">
+                    <p>Hoặc đăng ký với</p>
+                    <div class="social-icons">
+                        <a href="#" class="social-icon google"><i class="fab fa-google"></i></a>
+                        <a href="#" class="social-icon facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-icon github"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="register.js"></script>
+</body>
+</html>
