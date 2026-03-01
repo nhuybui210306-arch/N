@@ -2,7 +2,7 @@
 const AppState = {
     user: JSON.parse(localStorage.getItem('2n1_current_user')) || null,
     tasks: JSON.parse(localStorage.getItem('2n1_tasks')) || [],
-    points: parseInt(localStorage.getItem('2n1_points')) || 0,
+    points: parseInt(localStorage.getItem('2n1_points')) || 50, // Mặc định 50 điểm
     pets: JSON.parse(localStorage.getItem('2n1_pets')) || [],
     currentPet: JSON.parse(localStorage.getItem('2n1_current_pet')) || null,
     petStats: JSON.parse(localStorage.getItem('2n1_pet_stats')) || {
@@ -26,6 +26,12 @@ const AppState = {
     },
     currentDate: new Date()
 };
+
+// ================ KIỂM TRA DỮ LIỆU ================
+console.log('AppState khởi tạo:', AppState);
+console.log('Điểm hiện tại:', AppState.points);
+console.log('Thú cưng hiện tại:', AppState.currentPet);
+console.log('Chỉ số thú cưng:', AppState.petStats);
 
 // ================ AUDIO MANAGER ================
 class AudioManager {
@@ -158,13 +164,15 @@ const audioManager = new AudioManager();
 class PetManager {
     constructor() {
         this.petTypes = [
-            { id: 1, name: 'Mèo Con', price: 100, image: 'cat.png', happiness: 50, hunger: 100 },
-            { id: 2, name: 'Cún Con', price: 150, image: 'dog.png', happiness: 60, hunger: 80 },
-            { id: 3, name: 'Thỏ Trắng', price: 120, image: 'rabbit.png', happiness: 70, hunger: 70 },
-            { id: 4, name: 'Gấu Trúc', price: 200, image: 'panda.png', happiness: 80, hunger: 90 },
-            { id: 5, name: 'Rồng Nhỏ', price: 500, image: 'dragon.png', happiness: 100, hunger: 60 },
-            { id: 6, name: 'Kỳ Lân', price: 300, image: 'unicorn.png', happiness: 90, hunger: 70 }
+            { id: 1, name: 'Mèo Con', price: 100, image: '🐱', happiness: 50, hunger: 100 },
+            { id: 2, name: 'Cún Con', price: 150, image: '🐶', happiness: 60, hunger: 80 },
+            { id: 3, name: 'Thỏ Trắng', price: 120, image: '🐰', happiness: 70, hunger: 70 },
+            { id: 4, name: 'Gấu Trúc', price: 200, image: '🐼', happiness: 80, hunger: 90 },
+            { id: 5, name: 'Rồng Nhỏ', price: 500, image: '🐲', happiness: 100, hunger: 60 },
+            { id: 6, name: 'Kỳ Lân', price: 300, image: '🦄', happiness: 90, hunger: 70 }
         ];
+        
+        console.log('PetManager khởi tạo với các loại:', this.petTypes);
     }
 
     getAvailablePets() {
@@ -173,7 +181,13 @@ class PetManager {
 
     buyPet(petId) {
         const pet = this.petTypes.find(p => p.id === petId);
-        if (!pet) return false;
+        if (!pet) {
+            console.log('Không tìm thấy pet với id:', petId);
+            return false;
+        }
+        
+        console.log('Đang mua pet:', pet);
+        console.log('Điểm hiện tại:', AppState.points, 'Giá:', pet.price);
         
         if (AppState.points >= pet.price) {
             AppState.points -= pet.price;
@@ -184,29 +198,50 @@ class PetManager {
             }
             
             this.save();
+            console.log('Mua thành công! Điểm còn lại:', AppState.points);
             return true;
         }
+        console.log('Không đủ điểm!');
         return false;
     }
 
     selectPet(petId) {
         AppState.currentPet = petId;
         this.save();
+        console.log('Đã chọn pet:', petId);
     }
 
     feedPet() {
+        console.log('Đang cho thú cưng ăn...');
         if (AppState.currentPet) {
             AppState.petStats.hunger = Math.min(100, AppState.petStats.hunger + 20);
             AppState.petStats.happiness += 5;
+            console.log('Sau khi cho ăn - Đói:', AppState.petStats.hunger, 'Hạnh phúc:', AppState.petStats.happiness);
             this.save();
+            updatePetDisplay();
+            showNotification('🍖 Đã cho thú cưng ăn!');
+            return true;
+        } else {
+            console.log('Chưa có thú cưng!');
+            showNotification('❌ Bạn chưa có thú cưng! Hãy mua thú cưng trong shop!', 'error');
+            return false;
         }
     }
 
     playWithPet() {
+        console.log('Đang chơi với thú cưng...');
         if (AppState.currentPet) {
             AppState.petStats.happiness = Math.min(100, AppState.petStats.happiness + 15);
             AppState.petStats.hunger = Math.max(0, AppState.petStats.hunger - 10);
+            console.log('Sau khi chơi - Hạnh phúc:', AppState.petStats.happiness, 'Đói:', AppState.petStats.hunger);
             this.save();
+            updatePetDisplay();
+            showNotification('🎮 Đã chơi với thú cưng!');
+            return true;
+        } else {
+            console.log('Chưa có thú cưng!');
+            showNotification('❌ Bạn chưa có thú cưng! Hãy mua thú cưng trong shop!', 'error');
+            return false;
         }
     }
 
@@ -219,10 +254,11 @@ class PetManager {
             if (AppState.petStats.exp >= expNeeded) {
                 AppState.petStats.level++;
                 AppState.petStats.exp -= expNeeded;
-                showNotification(`Thú cưng của bạn đã lên cấp ${AppState.petStats.level}! 🎉`);
+                showNotification(`🎉 Thú cưng của bạn đã lên cấp ${AppState.petStats.level}!`);
             }
             
             this.save();
+            updatePetDisplay();
         }
     }
 
@@ -231,15 +267,22 @@ class PetManager {
             AppState.petStats.happiness = Math.max(0, AppState.petStats.happiness - 1);
             AppState.petStats.hunger = Math.max(0, AppState.petStats.hunger - 1);
             this.save();
+            updatePetDisplay();
         }
     }
 
     save() {
-        localStorage.setItem('2n1_points', AppState.points);
+        localStorage.setItem('2n1_points', AppState.points.toString());
         localStorage.setItem('2n1_pets', JSON.stringify(AppState.pets));
         localStorage.setItem('2n1_current_pet', JSON.stringify(AppState.currentPet));
         localStorage.setItem('2n1_pet_stats', JSON.stringify(AppState.petStats));
-        updatePetDisplay();
+        
+        console.log('Đã lưu dữ liệu pet:', {
+            points: AppState.points,
+            pets: AppState.pets,
+            currentPet: AppState.currentPet,
+            stats: AppState.petStats
+        });
     }
 }
 
@@ -285,6 +328,7 @@ class TaskManager {
             
             this.save();
             updatePoints();
+            updateProgress();
             return true;
         }
         return false;
@@ -321,110 +365,11 @@ class TaskManager {
 
 const taskManager = new TaskManager();
 
-// ================ SCHEDULE MANAGER ================
-class ScheduleManager {
-    constructor() {
-        this.days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
-    }
-
-    saveDay(day, schedule) {
-        if (!AppState.schedule[day]) {
-            AppState.schedule[day] = [];
-        }
-        AppState.schedule[day] = schedule;
-        localStorage.setItem('2n1_schedule', JSON.stringify(AppState.schedule));
-    }
-
-    getTotalStudyTime() {
-        let total = 0;
-        Object.values(AppState.schedule).forEach(day => {
-            day.forEach(task => {
-                total += parseInt(task.duration) || 0;
-            });
-        });
-        return total;
-    }
-
-    renderSchedule() {
-        const container = document.getElementById('week-schedule');
-        container.innerHTML = '';
-        
-        this.days.forEach((day, index) => {
-            const daySchedule = AppState.schedule[day] || [];
-            const totalTime = daySchedule.reduce((sum, task) => sum + (parseInt(task.duration) || 0), 0);
-            
-            const dayCard = document.createElement('div');
-            dayCard.className = 'day-card';
-            dayCard.innerHTML = `
-                <div class="day-name">${day}</div>
-                <div class="day-tasks">${daySchedule.length} môn</div>
-                <div class="day-study-time">${totalTime} phút</div>
-                <div class="day-schedule-inputs" id="schedule-${index}">
-                    ${daySchedule.map((task, i) => `
-                        <input type="text" class="day-schedule-input" 
-                               value="${task.name}" 
-                               placeholder="Môn học" 
-                               data-day="${day}" 
-                               data-index="${i}">
-                    `).join('')}
-                    <input type="text" class="day-schedule-input" 
-                           placeholder="+ Thêm môn học" 
-                           data-day="${day}" 
-                           data-new="true">
-                </div>
-            `;
-            
-            container.appendChild(dayCard);
-            
-            // Add input listeners
-            dayCard.querySelectorAll('.day-schedule-input').forEach(input => {
-                input.addEventListener('change', (e) => {
-                    this.handleScheduleInput(day, e.target);
-                });
-            });
-        });
-    }
-
-    handleScheduleInput(day, input) {
-        const index = input.dataset.index;
-        const value = input.value.trim();
-        
-        if (!AppState.schedule[day]) {
-            AppState.schedule[day] = [];
-        }
-        
-        if (input.dataset.new) {
-            // Add new task
-            if (value) {
-                AppState.schedule[day].push({
-                    name: value,
-                    duration: 60 // Default 60 minutes
-                });
-            }
-        } else if (index !== undefined) {
-            // Update existing task
-            if (value) {
-                AppState.schedule[day][index].name = value;
-            } else {
-                // Remove if empty
-                AppState.schedule[day].splice(index, 1);
-            }
-        }
-        
-        this.save();
-        this.renderSchedule();
-    }
-
-    save() {
-        localStorage.setItem('2n1_schedule', JSON.stringify(AppState.schedule));
-    }
-}
-
-const scheduleManager = new ScheduleManager();
-
 // ================ RENDERING FUNCTIONS ================
 function renderTasks() {
     const container = document.getElementById('time-slots-container');
+    if (!container) return;
+    
     const todayTasks = taskManager.getTodayTasks();
     
     container.innerHTML = '';
@@ -467,6 +412,7 @@ function renderTasks() {
             
             if (this.checked) {
                 taskManager.completeTask(taskId);
+                taskItem.classList.add('completed');
             }
         });
     });
@@ -479,40 +425,69 @@ function updateProgress() {
     const completedCount = document.getElementById('completed-count');
     const totalCount = document.getElementById('total-count');
     
-    progressBar.style.width = `${progress.percent}%`;
-    progressPercent.textContent = `${progress.percent}%`;
-    completedCount.textContent = progress.completed;
-    totalCount.textContent = progress.total;
+    if (progressBar) progressBar.style.width = `${progress.percent}%`;
+    if (progressPercent) progressPercent.textContent = `${progress.percent}%`;
+    if (completedCount) completedCount.textContent = progress.completed;
+    if (totalCount) totalCount.textContent = progress.total;
 }
 
 function updatePoints() {
     const pointsDisplay = document.getElementById('user-points');
     const shopPoints = document.getElementById('shop-points');
     
-    pointsDisplay.textContent = AppState.points;
+    if (pointsDisplay) pointsDisplay.textContent = AppState.points;
     if (shopPoints) shopPoints.textContent = AppState.points;
+    
+    console.log('Điểm đã cập nhật:', AppState.points);
 }
 
 function updatePetDisplay() {
+    console.log('Cập nhật hiển thị thú cưng...');
+    
+    const petName = document.getElementById('pet-name');
+    const petLevel = document.getElementById('pet-level');
+    const petHappiness = document.getElementById('pet-happiness');
+    const petHunger = document.getElementById('pet-hunger');
+    const petExp = document.getElementById('pet-exp');
+    const happinessValue = document.getElementById('happiness-value');
+    const hungerValue = document.getElementById('hunger-value');
+    const expValue = document.getElementById('exp-value');
+    const petImage = document.getElementById('pet-image');
+    
     if (!AppState.currentPet) {
-        document.getElementById('pet-name').textContent = 'Chưa có thú cưng';
+        if (petName) petName.textContent = 'Chưa có thú cưng';
+        if (petLevel) petLevel.textContent = 'Cấp 0';
+        if (petHappiness) petHappiness.style.width = '0%';
+        if (petHunger) petHunger.style.width = '0%';
+        if (petExp) petExp.style.width = '0%';
+        if (happinessValue) happinessValue.textContent = '0%';
+        if (hungerValue) hungerValue.textContent = '0%';
+        if (expValue) expValue.textContent = '0/0';
         return;
     }
     
     const pet = petManager.petTypes.find(p => p.id === AppState.currentPet);
     if (pet) {
-        document.getElementById('pet-name').textContent = pet.name;
-        document.getElementById('pet-level').textContent = `Cấp ${AppState.petStats.level}`;
-        document.getElementById('pet-happiness').style.width = `${AppState.petStats.happiness}%`;
-        document.getElementById('pet-hunger').style.width = `${AppState.petStats.hunger}%`;
+        if (petName) petName.textContent = pet.name;
+        if (petLevel) petLevel.textContent = `Cấp ${AppState.petStats.level}`;
+        if (petHappiness) petHappiness.style.width = `${AppState.petStats.happiness}%`;
+        if (petHunger) petHunger.style.width = `${AppState.petStats.hunger}%`;
         
         const expNeeded = AppState.petStats.level * 100;
         const expPercent = (AppState.petStats.exp / expNeeded) * 100;
-        document.getElementById('pet-exp').style.width = `${expPercent}%`;
+        if (petExp) petExp.style.width = `${expPercent}%`;
         
-        document.getElementById('happiness-value').textContent = `${AppState.petStats.happiness}%`;
-        document.getElementById('hunger-value').textContent = `${AppState.petStats.hunger}%`;
-        document.getElementById('exp-value').textContent = `${AppState.petStats.exp}/${expNeeded}`;
+        if (happinessValue) happinessValue.textContent = `${AppState.petStats.happiness}%`;
+        if (hungerValue) hungerValue.textContent = `${AppState.petStats.hunger}%`;
+        if (expValue) expValue.textContent = `${AppState.petStats.exp}/${expNeeded}`;
+        
+        // Hiển thị emoji thay vì ảnh
+        if (petImage) {
+            petImage.style.fontSize = '80px';
+            petImage.textContent = pet.image;
+        }
+        
+        console.log('Đã cập nhật hiển thị pet:', pet.name);
     }
 }
 
@@ -528,31 +503,40 @@ function updatePomodoroDisplay() {
     const sessionType = document.getElementById('session-type');
     const progressRing = document.querySelector('.progress-ring__progress');
     
-    display.textContent = `${pomodoroMinutes.toString().padStart(2, '0')}:${pomodoroSeconds.toString().padStart(2, '0')}`;
+    if (display) {
+        display.textContent = `${pomodoroMinutes.toString().padStart(2, '0')}:${pomodoroSeconds.toString().padStart(2, '0')}`;
+    }
     
     // Update progress ring
-    const totalSeconds = pomodoroSession === 'work' 
-        ? AppState.pomodoro.workDuration * 60 
-        : AppState.pomodoro.breakDuration * 60;
-    const currentSeconds = pomodoroMinutes * 60 + pomodoroSeconds;
-    const progress = (totalSeconds - currentSeconds) / totalSeconds;
-    const circumference = 2 * Math.PI * 90;
-    const offset = circumference * progress;
-    progressRing.style.strokeDashoffset = offset;
+    if (progressRing) {
+        const totalSeconds = pomodoroSession === 'work' 
+            ? AppState.pomodoro.workDuration * 60 
+            : AppState.pomodoro.breakDuration * 60;
+        const currentSeconds = pomodoroMinutes * 60 + pomodoroSeconds;
+        const progress = (totalSeconds - currentSeconds) / totalSeconds;
+        const circumference = 2 * Math.PI * 90;
+        const offset = circumference * progress;
+        progressRing.style.strokeDashoffset = offset;
+    }
     
     // Update session type text
-    if (pomodoroSession === 'work') {
-        sessionType.textContent = '🎯 Đang tập trung';
-    } else {
-        sessionType.textContent = '☕ Đang nghỉ';
+    if (sessionType) {
+        if (pomodoroSession === 'work') {
+            sessionType.textContent = '🎯 Đang tập trung';
+        } else {
+            sessionType.textContent = '☕ Đang nghỉ';
+        }
     }
 }
 
 function startPomodoro() {
     if (!pomodoroRunning) {
         pomodoroRunning = true;
-        document.getElementById('start-btn').disabled = true;
-        document.getElementById('pause-btn').disabled = false;
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        
+        if (startBtn) startBtn.disabled = true;
+        if (pauseBtn) pauseBtn.disabled = false;
         
         pomodoroInterval = setInterval(() => {
             if (pomodoroSeconds === 0) {
@@ -576,8 +560,11 @@ function pausePomodoro() {
     if (pomodoroRunning) {
         clearInterval(pomodoroInterval);
         pomodoroRunning = false;
-        document.getElementById('start-btn').disabled = false;
-        document.getElementById('pause-btn').disabled = true;
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        
+        if (startBtn) startBtn.disabled = false;
+        if (pauseBtn) pauseBtn.disabled = true;
     }
 }
 
@@ -616,13 +603,20 @@ function completePomodoro() {
     
     pomodoroSeconds = 0;
     updatePomodoroDisplay();
-    document.getElementById('start-btn').disabled = false;
+    
+    const startBtn = document.getElementById('start-btn');
+    if (startBtn) startBtn.disabled = false;
 }
 
 // ================ SHOP FUNCTIONS ================
 function openShop() {
     const modal = document.getElementById('shop-modal');
     const grid = document.getElementById('pets-grid');
+    const shopPoints = document.getElementById('shop-points');
+    
+    if (!modal || !grid) return;
+    
+    if (shopPoints) shopPoints.textContent = AppState.points;
     
     grid.innerHTML = '';
     
@@ -634,35 +628,35 @@ function openShop() {
         petElement.className = `pet-shop-item ${owned ? 'owned' : ''} ${current ? 'current' : ''}`;
         
         petElement.innerHTML = `
-            <img src="assets/pets/${pet.image}" alt="${pet.name}" class="pet-shop-image">
+            <div class="pet-shop-image" style="font-size: 60px;">${pet.image}</div>
             <div class="pet-shop-name">${pet.name}</div>
             <div class="pet-shop-price">
                 <i class="fas fa-star"></i> ${pet.price}
             </div>
-            <button class="pet-shop-btn" ${owned ? 'disabled' : ''} data-id="${pet.id}">
+            <button class="pet-shop-btn" data-id="${pet.id}">
                 ${owned ? 'Đã sở hữu' : 'Mua'}
             </button>
-            ${!owned && current ? '<span class="current-badge">Đang sử dụng</span>' : ''}
         `;
         
-        petElement.querySelector('button').addEventListener('click', (e) => {
+        const btn = petElement.querySelector('button');
+        
+        btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (!owned) {
                 if (petManager.buyPet(pet.id)) {
                     showNotification(`🎉 Bạn đã mua ${pet.name} thành công!`);
                     updatePoints();
                     openShop(); // Refresh shop
+                    updatePetDisplay();
                 } else {
                     showNotification('❌ Không đủ điểm!', 'error');
                 }
-            }
-        });
-        
-        petElement.addEventListener('click', () => {
-            if (owned) {
+            } else {
+                // Nếu đã sở hữu, chọn làm thú cưng hiện tại
                 petManager.selectPet(pet.id);
                 updatePetDisplay();
-                openShop(); // Refresh to show current badge
+                openShop(); // Refresh
+                showNotification(`✅ Đã chọn ${pet.name} làm thú cưng!`);
             }
         });
         
@@ -676,8 +670,11 @@ function openShop() {
 function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
+    
+    const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+    
     notification.innerHTML = `
-        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+        <i class="fas ${icon}"></i>
         ${message}
     `;
     
@@ -695,6 +692,7 @@ function showNotification(message, type = 'success') {
         display: flex;
         align-items: center;
         gap: 10px;
+        font-weight: 500;
     `;
     
     document.body.appendChild(notification);
@@ -705,23 +703,38 @@ function showNotification(message, type = 'success') {
     }, 3000);
 }
 
-// ================ EVENT LISTENERS ================
+// ================ INITIALIZATION ================
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('Trang đã load, bắt đầu khởi tạo...');
+    
     // Check login
     if (!AppState.user) {
+        console.log('Chưa đăng nhập, chuyển về trang register');
         window.location.href = 'register.html';
         return;
     }
     
     // Display username
-    document.getElementById('username').textContent = AppState.user.name;
+    const usernameElement = document.getElementById('username');
+    if (usernameElement) {
+        usernameElement.textContent = AppState.user.name;
+    }
     
     // Initial render
     renderTasks();
     updateProgress();
     updatePoints();
     updatePetDisplay();
-    scheduleManager.renderSchedule();
+    
+    // Thêm dữ liệu mẫu nếu chưa có thú cưng
+    if (AppState.pets.length === 0) {
+        console.log('Chưa có thú cưng, thêm dữ liệu mẫu để test');
+        // Tạm thời cho một pet mẫu để test
+        // AppState.pets.push(1);
+        // AppState.currentPet = 1;
+        // petManager.save();
+        // updatePetDisplay();
+    }
     
     // Sound controls
     document.querySelectorAll('.sound-btn').forEach(btn => {
@@ -732,97 +745,133 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.classList.add('active');
             
             audioManager.playSound(sound);
-            document.getElementById('current-sound').textContent = btn.querySelector('span').textContent;
+            const currentSound = document.getElementById('current-sound');
+            if (currentSound) {
+                currentSound.textContent = btn.querySelector('span').textContent;
+            }
         });
     });
     
-    document.getElementById('volume-slider').addEventListener('input', (e) => {
-        audioManager.setVolume(e.target.value);
-    });
+    const volumeSlider = document.getElementById('volume-slider');
+    if (volumeSlider) {
+        volumeSlider.value = AppState.sound.volume;
+        volumeSlider.addEventListener('input', (e) => {
+            audioManager.setVolume(e.target.value);
+        });
+    }
     
-    document.getElementById('stop-sound').addEventListener('click', () => {
-        audioManager.stopSound();
-        document.querySelectorAll('.sound-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('current-sound').textContent = 'Không có';
-    });
+    const stopSoundBtn = document.getElementById('stop-sound');
+    if (stopSoundBtn) {
+        stopSoundBtn.addEventListener('click', () => {
+            audioManager.stopSound();
+            document.querySelectorAll('.sound-btn').forEach(b => b.classList.remove('active'));
+            const currentSound = document.getElementById('current-sound');
+            if (currentSound) currentSound.textContent = 'Không có';
+        });
+    }
     
     // Pet actions
-    document.getElementById('feed-pet').addEventListener('click', () => {
-        petManager.feedPet();
-        updatePetDisplay();
-    });
+    const feedBtn = document.getElementById('feed-pet');
+    const playBtn = document.getElementById('play-pet');
     
-    document.getElementById('play-pet').addEventListener('click', () => {
-        petManager.playWithPet();
-        updatePetDisplay();
-    });
+    if (feedBtn) {
+        feedBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Click nút Cho ăn');
+            petManager.feedPet();
+        });
+    }
+    
+    if (playBtn) {
+        playBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Click nút Chơi');
+            petManager.playWithPet();
+        });
+    }
     
     // Pomodoro controls
-    document.getElementById('start-btn').addEventListener('click', startPomodoro);
-    document.getElementById('pause-btn').addEventListener('click', pausePomodoro);
-    document.getElementById('reset-btn').addEventListener('click', resetPomodoro);
+    const startBtn = document.getElementById('start-btn');
+    const pauseBtn = document.getElementById('pause-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    
+    if (startBtn) startBtn.addEventListener('click', startPomodoro);
+    if (pauseBtn) pauseBtn.addEventListener('click', pausePomodoro);
+    if (resetBtn) resetBtn.addEventListener('click', resetPomodoro);
     
     // Add task
-    document.getElementById('add-task-btn').addEventListener('click', () => {
-        document.getElementById('task-modal').classList.add('active');
-    });
-    
-    document.getElementById('close-task').addEventListener('click', () => {
-        document.getElementById('task-modal').classList.remove('active');
-    });
-    
-    document.getElementById('task-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        taskManager.addTask({
-            name: document.getElementById('task-name').value,
-            time: document.getElementById('task-time').value,
-            duration: document.getElementById('task-duration').value,
-            priority: document.getElementById('task-priority').value
+    const addTaskBtn = document.getElementById('add-task-btn');
+    if (addTaskBtn) {
+        addTaskBtn.addEventListener('click', () => {
+            document.getElementById('task-modal').classList.add('active');
         });
-        
-        document.getElementById('task-modal').classList.remove('active');
-        e.target.reset();
-        showNotification('✅ Đã thêm nhiệm vụ mới!');
-    });
+    }
+    
+    const closeTask = document.getElementById('close-task');
+    if (closeTask) {
+        closeTask.addEventListener('click', () => {
+            document.getElementById('task-modal').classList.remove('active');
+        });
+    }
+    
+    const taskForm = document.getElementById('task-form');
+    if (taskForm) {
+        taskForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            taskManager.addTask({
+                name: document.getElementById('task-name').value,
+                time: document.getElementById('task-time').value,
+                duration: document.getElementById('task-duration').value,
+                priority: document.getElementById('task-priority').value
+            });
+            
+            document.getElementById('task-modal').classList.remove('active');
+            e.target.reset();
+            showNotification('✅ Đã thêm nhiệm vụ mới!');
+        });
+    }
     
     // Shop
-    document.querySelector('a[href="#shop"]').addEventListener('click', (e) => {
-        e.preventDefault();
-        openShop();
-    });
+    const shopLink = document.querySelector('a[href="#shop"]');
+    if (shopLink) {
+        shopLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openShop();
+        });
+    }
     
-    document.getElementById('close-shop').addEventListener('click', () => {
-        document.getElementById('shop-modal').classList.remove('active');
-    });
-    
-    // Save schedule
-    document.getElementById('save-schedule-btn').addEventListener('click', () => {
-        scheduleManager.save();
-        showNotification('📚 Đã lưu lịch học!');
-    });
+    const closeShop = document.getElementById('close-shop');
+    if (closeShop) {
+        closeShop.addEventListener('click', () => {
+            document.getElementById('shop-modal').classList.remove('active');
+        });
+    }
     
     // Floating button
-    document.getElementById('fab').addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+    const fab = document.getElementById('fab');
+    if (fab) {
+        fab.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
     
-    // Decrease pet stats over time
+    // Decrease pet stats over time (every minute)
     setInterval(() => {
         petManager.decreaseStats();
-        updatePetDisplay();
-    }, 60000); // Every minute
+    }, 60000);
     
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
         // Ctrl/Cmd + N: New task
         if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
             e.preventDefault();
-            document.getElementById('add-task-btn').click();
+            const addBtn = document.getElementById('add-task-btn');
+            if (addBtn) addBtn.click();
         }
         
         // Space: Pause/Resume Pomodoro
-        if (e.key === ' ' && !e.target.matches('input, textarea')) {
+        if (e.key === ' ' && !e.target.matches('input, textarea, button')) {
             e.preventDefault();
             if (pomodoroRunning) {
                 pausePomodoro();
@@ -838,4 +887,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
+    
+    console.log('Khởi tạo hoàn tất!');
 });
