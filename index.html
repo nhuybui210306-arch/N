@@ -71,7 +71,7 @@
                     <div class="time-slots" id="time-slots-container"></div>
                 </div>
 
-                <!-- Lịch học trong tuần -->
+                <!-- Lịch học trong tuần (CẬP NHẬT) -->
                 <div class="card glass-card" id="schedule">
                     <div class="card-header">
                         <h2><i class="fas fa-calendar-week"></i> Lịch Học Trong Tuần</h2>
@@ -117,9 +117,9 @@
                     </div>
                 </div>
 
-                <!-- Phòng âm thanh tập trung -->
+                <!-- Phòng âm thanh Lofi (CẬP NHẬT) -->
                 <div class="card glass-card sound-card">
-                    <h2><i class="fas fa-headphones"></i> Âm Thanh Tập Trung</h2>
+                    <h2><i class="fas fa-headphones"></i> Nhạc Lofi Tập Trung</h2>
                     
                     <div class="sound-controls">
                         <div class="volume-control">
@@ -129,24 +129,24 @@
                         </div>
                         
                         <div class="sound-buttons">
-                            <button class="sound-btn" data-sound="forest">
-                                <i class="fas fa-tree"></i>
-                                <span>Rừng</span>
+                            <button class="sound-btn" data-sound="lofi-study">
+                                <i class="fas fa-book-open"></i>
+                                <span>Lofi Study</span>
                                 <div class="sound-wave"></div>
                             </button>
-                            <button class="sound-btn" data-sound="rain">
+                            <button class="sound-btn" data-sound="lofi-chill">
+                                <i class="fas fa-mug-hot"></i>
+                                <span>Lofi Chill</span>
+                                <div class="sound-wave"></div>
+                            </button>
+                            <button class="sound-btn" data-sound="lofi-rain">
                                 <i class="fas fa-cloud-rain"></i>
-                                <span>Mưa</span>
+                                <span>Lofi Rain</span>
                                 <div class="sound-wave"></div>
                             </button>
-                            <button class="sound-btn" data-sound="ocean">
-                                <i class="fas fa-water"></i>
-                                <span>Biển</span>
-                                <div class="sound-wave"></div>
-                            </button>
-                            <button class="sound-btn" data-sound="white-noise">
-                                <i class="fas fa-wave-square"></i>
-                                <span>White Noise</span>
+                            <button class="sound-btn" data-sound="lofi-jazz">
+                                <i class="fas fa-music"></i>
+                                <span>Lofi Jazz</span>
                                 <div class="sound-wave"></div>
                             </button>
                         </div>
@@ -158,16 +158,19 @@
                                 <i class="fas fa-stop"></i>
                             </button>
                         </div>
+                        
+                        <!-- YouTube Audio Player Ẩn -->
+                        <div id="youtube-player" style="display: none;"></div>
                     </div>
                 </div>
 
-                <!-- Thú cưng ảo -->
+                <!-- Thú cưng ảo (CẬP NHẬT) -->
                 <div class="card glass-card pet-card" id="pets">
                     <h2><i class="fas fa-paw"></i> Thú Cưng Của Bạn</h2>
                     
                     <div class="pet-container">
                         <div class="pet-display" id="pet-display">
-                            <img src="assets/pets/pet-default.png" alt="Thú cưng" id="pet-image" class="pet-image">
+                            <div class="pet-image" id="pet-image">🐱</div>
                             <div class="pet-status">
                                 <div class="pet-name" id="pet-name">Chưa có thú cưng</div>
                                 <div class="pet-level" id="pet-level">Cấp 1</div>
@@ -176,21 +179,21 @@
                         
                         <div class="pet-stats">
                             <div class="pet-stat">
-                                <i class="fas fa-heart"></i>
+                                <i class="fas fa-heart" style="color: #ff6b6b;"></i>
                                 <div class="stat-bar">
                                     <div class="stat-fill" id="pet-happiness" style="width: 0%"></div>
                                 </div>
                                 <span id="happiness-value">0%</span>
                             </div>
                             <div class="pet-stat">
-                                <i class="fas fa-utensils"></i>
+                                <i class="fas fa-utensils" style="color: #4ecdc4;"></i>
                                 <div class="stat-bar">
                                     <div class="stat-fill" id="pet-hunger" style="width: 100%"></div>
                                 </div>
                                 <span id="hunger-value">100%</span>
                             </div>
                             <div class="pet-stat">
-                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star" style="color: #ffd93d;"></i>
                                 <div class="stat-bar">
                                     <div class="stat-fill" id="pet-exp" style="width: 0%"></div>
                                 </div>
@@ -198,13 +201,17 @@
                             </div>
                         </div>
                         
-                        <div class="pet-actions">
-                            <button class="pet-action" id="feed-pet">
-                                <i class="fas fa-apple-alt"></i> Cho ăn
-                            </button>
-                            <button class="pet-action" id="play-pet">
-                                <i class="fas fa-gamepad"></i> Chơi
-                            </button>
+                        <div class="pet-message" id="pet-message">
+                            <i class="fas fa-comment-dots"></i>
+                            <span>Hoàn thành nhiệm vụ để cho thú cưng ăn!</span>
+                        </div>
+                        
+                        <div class="pet-food-inventory">
+                            <h4><i class="fas fa-box"></i> Thức ăn: <span id="food-count">0</span></h4>
+                            <div class="food-progress">
+                                <div class="food-progress-bar" id="food-progress-bar" style="width: 0%"></div>
+                            </div>
+                            <p class="food-note">Mỗi 3 nhiệm vụ = 1 phần thức ăn</p>
                         </div>
                     </div>
                 </div>
@@ -212,7 +219,7 @@
         </div>
     </div>
 
-    <!-- Cửa hàng thú cưng Modal -->
+    <!-- Cửa hàng thú cưng Modal (CẬP NHẬT) -->
     <div class="modal-overlay" id="shop-modal">
         <div class="modal-content shop-modal">
             <div class="modal-header">
@@ -280,6 +287,8 @@
         <i class="fas fa-chevron-up"></i>
     </button>
 
+    <!-- Thêm thư viện YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
     <script src="script.js"></script>
 </body>
 </html>
